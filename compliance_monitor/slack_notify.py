@@ -79,6 +79,18 @@ def post_to_slack(summary):
     )
     response.raise_for_status()
 
+    # A 200 status alone doesn't always mean Slack accepted the message —
+    # some webhook errors (e.g. a malformed payload) come back as HTTP 200
+    # with a plain-text error body instead of "ok". Log it so a run that
+    # looks green in GitHub Actions but posted nothing is easy to spot.
+    print(f"  Slack response: {response.status_code} {response.text!r}")
+    if response.text.strip() != "ok":
+        raise RuntimeError(
+            f"Slack webhook did not confirm delivery (got {response.text!r}). "
+            "Check that SLACK_WEBHOOK_URL is correct and the webhook hasn't "
+            "been revoked/reinstalled in Slack."
+        )
+
 
 def _section(text):
     return {"type": "section", "text": {"type": "mrkdwn", "text": text}}

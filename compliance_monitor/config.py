@@ -15,17 +15,36 @@ from dotenv import load_dotenv
 # workflow, so this is a no-op there.
 load_dotenv()
 
-# --- Secrets (see .env.example for where to get each one) -----------------
-# .strip() guards against a trailing newline/space sneaking in when a key is
-# copy-pasted into a .env file or a GitHub Actions secret — a stray "\n" on
-# the end of a header value causes a cryptic "Invalid ... return character(s)
-# in header value" error from the requests library that has nothing to do
-# with whether the key itself is valid.
-OPENSANCTIONS_API_KEY = os.environ.get("OPENSANCTIONS_API_KEY", "").strip()
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "").strip()
-NOTION_API_KEY = os.environ.get("NOTION_API_KEY", "").strip()
-NOTION_DATABASE_ID = os.environ.get("NOTION_DATABASE_ID", "").strip()
+def _clean_secret(name):
+    """
+    Read an environment variable and strip common copy-paste artifacts that
+    otherwise produce a cryptic "Invalid ... header value" error with no
+    obvious connection to the secret being wrong:
+      - real whitespace/newlines around the value (.strip())
+      - a *literal* two-character "\\n" (backslash + n) left over from a
+        value that was copied out of a place that displayed it as escaped
+        text rather than an actual line break
+      - a single pair of wrapping quotes, if the whole value was pasted
+        including the quote marks (e.g. from a JSON snippet)
+    Runs a couple of passes since these can stack (e.g. quotes around a
+    value that also has a trailing literal "\\n" just inside them).
+    """
+    value = os.environ.get(name, "")
+    for _ in range(2):
+        value = value.strip()
+        if value.endswith("\\n"):
+            value = value[:-2]
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+    return value.strip()
+
+
+# --- Secrets (see .env.example for where to get each one) -------------------
+OPENSANCTIONS_API_KEY = _clean_secret("OPENSANCTIONS_API_KEY")
+ANTHROPIC_API_KEY = _clean_secret("ANTHROPIC_API_KEY")
+SLACK_WEBHOOK_URL = _clean_secret("SLACK_WEBHOOK_URL")
+NOTION_API_KEY = _clean_secret("NOTION_API_KEY")
+NOTION_DATABASE_ID = _clean_secret("NOTION_DATABASE_ID")
 
 # --- OpenSanctions ----------------------------------------------------------
 OPENSANCTIONS_BASE_URL = "https://api.opensanctions.org"
@@ -56,6 +75,39 @@ CLAUDE_MODEL = "claude-opus-5"
 # --- Notion -------------------------------------------------------------------
 NOTION_VERSION = "2022-06-28"
 NOTION_API_URL = "https://api.notion.com/v1/pages"
+
+
+_SECRET_NAMES = [
+    "OPENSANCTIONS_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "SLACK_WEBHOOK_URL",
+    "NOTION_API_KEY",
+    "NOTION_DATABASE_ID",
+]
+
+
+def diagnose_secrets():
+    """
+    Describe the *shape* of each raw secret (length, stray characters) —
+    never the value itself — so a copy-paste artifact (trailing newline,
+    wrapping quotes, a literal "\\n") is visible in the Actions log without
+    ever printing anything that could leak the secret.
+    """
+    lines = []
+    for name in _SECRET_NAMES:
+        raw = os.environ.get(name, "")
+        if not raw:
+            lines.append(f"  {name}: NOT SET")
+            continue
+        notes = [f"{len(raw)} chars"]
+        if raw != raw.strip():
+            notes.append("has leading/trailing whitespace")
+        if raw.endswith("\\n"):
+            notes.append('ends with a literal backslash-n ("\\n" typed as text)')
+        if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "\"'":
+            notes.append("wrapped in quote characters")
+        lines.append(f"  {name}: {', '.join(notes)}")
+    return "\n".join(lines)
 
 
 def require_env_vars():

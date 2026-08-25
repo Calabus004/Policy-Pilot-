@@ -21,6 +21,12 @@ from compliance_monitor.test_names import TEST_NAMES
 
 
 def main():
+    # Print the shape (not the value) of each secret, so a stray character
+    # left over from copy-pasting is visible in the Actions log immediately
+    # instead of showing up as a confusing downstream API error.
+    print("Secret check (lengths/shape only, never the actual values):")
+    print(config.diagnose_secrets())
+
     # Fail fast and clearly if a key is missing, rather than partway through.
     config.require_env_vars()
 

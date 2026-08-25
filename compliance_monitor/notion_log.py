@@ -22,9 +22,15 @@ import requests
 from compliance_monitor import config
 
 
-def log_to_notion(summary):
+def log_to_notion(summary, screened_names=None):
     """
     `summary` is the dict returned by ai_summary.summarize_with_claude().
+    `screened_names` is the full list of names passed to check_sanctions()
+    (see test_names.py) — every one of them gets a row here, even the ones
+    with no sanctions match, so the audit trail proves every name was
+    actually screened rather than only recording the hits. (FCA news
+    doesn't need this: every fetched item is already sent to Claude and
+    comes back in summary["fca_news_summary"] regardless of relevance.)
     Returns the number of rows written.
     """
     if not config.NOTION_API_KEY or not config.NOTION_DATABASE_ID:
@@ -41,6 +47,25 @@ def log_to_notion(summary):
 
     today = datetime.now(timezone.utc).date().isoformat()
     logged = 0
+
+    matched_names = {item.get("queried_name") for item in summary.get("sanctions_summary", [])}
+    for name_entry in screened_names or []:
+        name = name_entry["name"] if isinstance(name_entry, dict) else name_entry
+        if name in matched_names:
+            continue  # this name has its own row(s) below, from the AI summary
+        _create_notion_row(
+            headers,
+            name=name,
+            item_type="Sanctions match",
+            source="UK Sanctions List & EU Consolidated Financial Sanctions List",
+            relevant=False,
+            explanation="Screened against both lists — no match found.",
+            next_action="No action needed.",
+            posted_to_slack=False,
+            log_date=today,
+            link="",
+        )
+        logged += 1
 
     for item in summary.get("sanctions_summary", []):
         _create_notion_row(

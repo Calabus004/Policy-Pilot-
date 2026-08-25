@@ -53,7 +53,7 @@ def main():
     print("  Done.")
 
     print("Step 6/6: Logging every item to Notion for the audit trail...")
-    logged = log_to_notion(summary)
+    logged = log_to_notion(summary, screened_names=names)
     print(f"  {logged} item(s) logged.")
 
     print("Daily compliance monitoring run complete.")

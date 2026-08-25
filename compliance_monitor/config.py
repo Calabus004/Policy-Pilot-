@@ -16,11 +16,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Secrets (see .env.example for where to get each one) -----------------
-OPENSANCTIONS_API_KEY = os.environ.get("OPENSANCTIONS_API_KEY", "")
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
-NOTION_API_KEY = os.environ.get("NOTION_API_KEY", "")
-NOTION_DATABASE_ID = os.environ.get("NOTION_DATABASE_ID", "")
+# .strip() guards against a trailing newline/space sneaking in when a key is
+# copy-pasted into a .env file or a GitHub Actions secret — a stray "\n" on
+# the end of a header value causes a cryptic "Invalid ... return character(s)
+# in header value" error from the requests library that has nothing to do
+# with whether the key itself is valid.
+OPENSANCTIONS_API_KEY = os.environ.get("OPENSANCTIONS_API_KEY", "").strip()
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "").strip()
+NOTION_API_KEY = os.environ.get("NOTION_API_KEY", "").strip()
+NOTION_DATABASE_ID = os.environ.get("NOTION_DATABASE_ID", "").strip()
 
 # --- OpenSanctions ----------------------------------------------------------
 OPENSANCTIONS_BASE_URL = "https://api.opensanctions.org"

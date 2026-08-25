@@ -25,6 +25,12 @@ jobs:
 
       - name: Run daily compliance monitoring script
         env:
+          # Forces stdout/stderr to be unbuffered so log lines appear in the
+          # true order they were printed — without this, Python fully
+          # buffers stdout when it isn't a terminal (as in CI), so an error
+          # printed to stderr at the very end can appear to jump above
+          # earlier "Step X/6" lines that just hadn't flushed yet.
+          PYTHONUNBUFFERED: "1"
           OPENSANCTIONS_API_KEY: ${{ secrets.OPENSANCTIONS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

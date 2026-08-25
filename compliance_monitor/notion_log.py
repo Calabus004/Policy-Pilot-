@@ -127,4 +127,14 @@ def _create_notion_row(
     response = requests.post(
         config.NOTION_API_URL, headers=headers, json=payload, timeout=15
     )
-    response.raise_for_status()
+    if not response.ok:
+        # requests' default raise_for_status() message is just "404 Client
+        # Error: Not Found for url: ..." — Notion's actual response body is
+        # far more useful (e.g. "Could not find database with ID ... Make
+        # sure the relevant pages and databases are shared with your
+        # integration."), so surface it directly instead of making the next
+        # debugging round-trip guess at the cause.
+        raise RuntimeError(
+            f"Notion API error {response.status_code} creating row for "
+            f"{name!r}: {response.text}"
+        )

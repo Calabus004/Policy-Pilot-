@@ -1,0 +1,33 @@
+name: Daily Compliance Monitoring
+
+on:
+  schedule:
+    # Runs every day at 07:00 UTC. Cron is always UTC on GitHub Actions —
+    # adjust the hour to suit your team's morning (e.g. "0 8 * * *" for
+    # 08:00 UTC / 09:00 BST-ish, accounting for daylight saving drift).
+    - cron: "0 7 * * *"
+  workflow_dispatch: {}  # adds a "Run workflow" button in the Actions tab for manual runs
+
+jobs:
+  run-compliance-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily compliance monitoring script
+        env:
+          OPENSANCTIONS_API_KEY: ${{ secrets.OPENSANCTIONS_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: python -m compliance_monitor.main

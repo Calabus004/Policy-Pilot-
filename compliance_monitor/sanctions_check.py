@@ -4,9 +4,41 @@ Consolidated Financial Sanctions List, using the OpenSanctions Match API.
 
 Docs: https://www.opensanctions.org/docs/api/matching/
 """
+import time
+
 import requests
 
 from compliance_monitor import config
+
+MAX_RETRIES = 3
+MAX_RETRY_DELAY_SECONDS = 30
+
+
+def _post_with_retry(url, headers, json_body, timeout=30):
+    """
+    Retry on HTTP 429 (rate limited) with backoff, since this is the one
+    error here that's expected to be transient rather than a real problem —
+    e.g. testing the workflow with several runs in quick succession. Honours
+    the API's Retry-After header when present, but caps the wait so a very
+    long requested delay (a genuine daily quota, not a brief burst limit)
+    fails fast with a clear error instead of stalling a CI job.
+    """
+    response = None
+    for attempt in range(MAX_RETRIES):
+        response = requests.post(url, headers=headers, json=json_body, timeout=timeout)
+        if response.status_code != 429:
+            response.raise_for_status()
+            return response
+
+        retry_after = response.headers.get("Retry-After")
+        delay = min(float(retry_after), MAX_RETRY_DELAY_SECONDS) if retry_after else 2 ** (attempt + 1)
+        if attempt == MAX_RETRIES - 1:
+            break
+        print(f"  Rate limited by OpenSanctions, retrying in {delay:.0f}s...")
+        time.sleep(delay)
+
+    response.raise_for_status()
+    return response
 
 
 def check_sanctions(names, threshold=None):
@@ -59,10 +91,7 @@ def check_sanctions(names, threshold=None):
     # single batched request each time (much faster than one call per name).
     for list_name, dataset_id in config.OPENSANCTIONS_DATASETS.items():
         url = f"{config.OPENSANCTIONS_BASE_URL}/match/{dataset_id}"
-        response = requests.post(
-            url, headers=headers, json={"queries": queries}, timeout=30
-        )
-        response.raise_for_status()
+        response = _post_with_retry(url, headers, {"queries": queries})
         data = response.json()
 
         for query_id, result in data.get("responses", {}).items():

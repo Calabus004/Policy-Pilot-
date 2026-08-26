@@ -36,4 +36,5 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          INTERNAL_ALERT_WEBHOOK_URL: ${{ secrets.INTERNAL_ALERT_WEBHOOK_URL }}
         run: python -m compliance_monitor.main

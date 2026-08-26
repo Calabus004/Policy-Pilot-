@@ -46,6 +46,15 @@ SLACK_WEBHOOK_URL = _clean_secret("SLACK_WEBHOOK_URL")
 NOTION_API_KEY = _clean_secret("NOTION_API_KEY")
 NOTION_DATABASE_ID = _clean_secret("NOTION_DATABASE_ID")
 
+# Optional. A *separate* Slack Incoming Webhook, pointed at a private
+# internal channel (e.g. a DM to yourself, or a #compliance-ops-alerts
+# channel the client is never invited to) — used only to notify you when a
+# run fails. Deliberately distinct from SLACK_WEBHOOK_URL above, which is
+# the client-facing digest channel: a failure must never post there. Not
+# required — if unset, failure_alert.py just prints a reminder to set it up
+# instead of blocking the run.
+INTERNAL_ALERT_WEBHOOK_URL = _clean_secret("INTERNAL_ALERT_WEBHOOK_URL")
+
 # --- OpenSanctions ----------------------------------------------------------
 OPENSANCTIONS_BASE_URL = "https://api.opensanctions.org"
 
@@ -83,6 +92,7 @@ _SECRET_NAMES = [
     "SLACK_WEBHOOK_URL",
     "NOTION_API_KEY",
     "NOTION_DATABASE_ID",
+    "INTERNAL_ALERT_WEBHOOK_URL",  # optional; diagnostics still show its shape if set
 ]
 
 

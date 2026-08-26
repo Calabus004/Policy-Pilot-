@@ -2,7 +2,8 @@
 
 A daily script that:
 
-1. Loads a test list of fictional fintech customer names.
+1. Loads a test list of real public companies plus fictional individuals,
+   representing a fintech's customer base.
 2. Screens them against the UK Sanctions List and the EU Consolidated
    Financial Sanctions List via the [OpenSanctions](https://www.opensanctions.org/) Match API.
 3. Pulls FCA news and enforcement notices published in the last 24 hours.
@@ -20,8 +21,9 @@ compliance_monitor/
   sanctions_check.py  # Step 2: OpenSanctions match API
   fca_news.py         # Step 3: FCA RSS feed, last 24 hours
   ai_summary.py        # Step 4: Claude summarization
-  slack_notify.py      # Step 5: post to Slack
-  notion_log.py         # Step 6: log to Notion
+  slack_notify.py      # Step 5: post to Slack (client-facing digest)
+  notion_log.py         # Step 6: log to Notion (full audit trail)
+  failure_alert.py       # internal-only "a run broke" notification, separate from Slack step 5
   main.py                # Step 7: runs steps 1-6 in order
 .github/workflows/
   daily-compliance-monitoring.yml   # runs main.py on a daily schedule
@@ -29,26 +31,36 @@ compliance_monitor/
 
 ## 1. Accounts and API keys you need before this will run
 
-You need five secrets. Create a `.env` file in the project root (copy
-`.env.example` — `cp .env.example .env`) and paste each one in on its own
-line, in this exact format: `KEY_NAME=the_value_no_quotes`.
+You need five required secrets, plus one optional one for private failure
+alerts. Create a `.env` file in the project root (copy `.env.example` —
+`cp .env.example .env`) and paste each one in on its own line, in this
+exact format: `KEY_NAME=the_value_no_quotes`.
 
 | # | Service | Where to get it | .env line |
 |---|---------|------------------|-----------|
 | 1 | OpenSanctions | [opensanctions.org/api](https://www.opensanctions.org/api/) — request an API key (free tier available for low volume) | `OPENSANCTIONS_API_KEY=your_key_here` |
 | 2 | Anthropic (Claude) | [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) — create an API key (you'll need billing set up) | `ANTHROPIC_API_KEY=your_key_here` |
-| 3 | Slack | See "Slack setup" below | `SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...` |
+| 3 | Slack (client-facing) | See "Slack setup" below | `SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...` |
 | 4 | Notion integration | See "Notion setup" below | `NOTION_API_KEY=secret_...` |
 | 5 | Notion database | See "Notion setup" below | `NOTION_DATABASE_ID=your_database_id` |
+| 6 (optional) | Slack (private, internal-only) | Same steps as #3, different channel | `INTERNAL_ALERT_WEBHOOK_URL=https://hooks.slack.com/services/...` |
 
 `.env` is already listed in `.gitignore` — never commit it.
 
 ### Slack setup
 
+You need **two separate** Incoming Webhooks — one for the client-facing
+digest, one for private failure alerts only you see. Repeat these steps
+twice, once per channel:
+
 1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**. Name it (e.g. "Compliance Monitor") and pick your workspace.
 2. In the app's settings, open **Incoming Webhooks** and switch it **On**.
-3. Click **Add New Webhook to Workspace**, choose the channel you want the daily digest posted to, and authorize it.
-4. Copy the webhook URL (looks like `https://hooks.slack.com/services/T000/B000/XXXX`) into `SLACK_WEBHOOK_URL` in your `.env`.
+3. Click **Add New Webhook to Workspace**, choose the channel, and authorize it.
+4. Copy the webhook URL (looks like `https://hooks.slack.com/services/T000/B000/XXXX`).
+
+For the **client-facing digest**, pick the channel the client (or your team, during testing) sees, and put the URL in `SLACK_WEBHOOK_URL`.
+
+For **internal failure alerts**, pick a channel the client will never be in — a DM to yourself, or a private `#compliance-ops-alerts` channel — and put that URL in `INTERNAL_ALERT_WEBHOOK_URL`. This one is optional: if you skip it, the run still works, it just won't be able to notify you privately when something breaks (it'll still show as a failed run in GitHub Actions, which the client can't see either way since this is a private repo).
 
 ### Notion setup
 
@@ -91,9 +103,9 @@ It runs every day at 07:00 UTC and can also be triggered manually.
 
 To activate it:
 
-1. Push this repository to GitHub (if it isn't already there).
-2. In the GitHub repo, go to **Settings → Secrets and variables → Actions → New repository secret**, and add all five secrets with the **same names** used in `.env`:
-   `OPENSANCTIONS_API_KEY`, `ANTHROPIC_API_KEY`, `SLACK_WEBHOOK_URL`, `NOTION_API_KEY`, `NOTION_DATABASE_ID`.
+1. Push this repository to GitHub (if it isn't already there) — as a **private** repo if this will ever contain a real client's data, so the client itself has no visibility into the code, secrets, or run history/failures.
+2. In the GitHub repo, go to **Settings → Secrets and variables → Actions → New repository secret**, and add the same secrets used in `.env`:
+   `OPENSANCTIONS_API_KEY`, `ANTHROPIC_API_KEY`, `SLACK_WEBHOOK_URL`, `NOTION_API_KEY`, `NOTION_DATABASE_ID`, and (recommended) `INTERNAL_ALERT_WEBHOOK_URL`.
 3. That's it — GitHub Actions will run the workflow daily for free (public repos get unlimited free minutes; private repos get 2,000 free minutes/month on the free plan, and this job takes well under a minute).
 4. To test it immediately rather than waiting for the schedule: go to the **Actions** tab → **Daily Compliance Monitoring** → **Run workflow**.
 5. To change the time it runs, edit the `cron` line in the workflow file — cron schedules on GitHub Actions are always in UTC.
@@ -103,5 +115,8 @@ To activate it:
 - **Match threshold**: `OPENSANCTIONS_MATCH_THRESHOLD` in `config.py` (default `0.7`) controls how confident a sanctions match must be before it's reported. Lower it to catch more (noisier) matches, raise it to reduce false positives.
 - **FCA RSS feed URL**: if `FCA_RSS_FEED_URL` in `config.py` ever stops working, check [fca.org.uk/news](https://www.fca.org.uk/news) for the current feed link.
 - **OpenSanctions dataset IDs**: `gb_fcdo_sanctions` (UK) and `eu_fsf` (EU) are the current dataset slugs as of this writing. OpenSanctions occasionally renames/consolidates datasets — check [opensanctions.org/datasets](https://www.opensanctions.org/datasets/) if matches stop coming back.
-- **Test names**: `test_names.py` is entirely fictional data for testing the pipeline. Replace it with a real (permissioned) query against your customer/KYC system before using this for anything beyond a proof of concept.
+- **Test names**: `test_names.py` mixes real public companies, fictional individuals, and one deliberately real sanctioned entity ("Bank Rossiya") to prove the alert path fires on a genuine hit. Replace it with a real (permissioned) query against your customer/KYC system before using this for anything beyond a proof of concept.
 - **Sanctions matches always route to a human**: by design, the AI is instructed to never suggest an automatic account action for a sanctions match — only "escalate for manual review". Don't change this without your compliance/legal team's sign-off.
+- **Failure alerts stay private**: `failure_alert.py` posts to `INTERNAL_ALERT_WEBHOOK_URL` only — never to the client-facing `SLACK_WEBHOOK_URL` channel. If a run breaks, only you get pinged; the client just sees the next successful digest whenever it arrives.
+- **Retries**: OpenSanctions requests automatically retry on HTTP 429 (rate limited) with backoff, up to 3 attempts — useful when testing with several manual runs in quick succession, and for resilience in production.
+- **Before pitching to a real client**: OpenSanctions' free API tier is for evaluation/individual use, not for reselling a service built on it — check their commercial licensing terms before using real client data or charging for this.

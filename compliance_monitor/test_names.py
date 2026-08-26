@@ -10,16 +10,16 @@ it has never heard of. None of the ordinary companies below are
 sanctioned; running this script should produce zero matches for them,
 which is the expected, boring, good outcome for a real customer.
 
-One entry — "Bank Rossiya" — is deliberately a real, long-standing,
-publicly designated entity (UK/EU sanctioned since 2014) rather than a
-plausible customer. It's there on purpose, to prove the full pipeline
-actually fires on a genuine hit (OpenSanctions match -> Claude flags it
-relevant -> Slack alert -> Notion row marked Relevant) rather than only
-ever exercising the "nothing found" path. Sanctions list entries are
-published specifically to be screened against, so there's no privacy
-concern using one here the way there would be for a real private
-individual. Remove it once you've confirmed the alert path works, or
-leave it in as a standing smoke test — it'll never be a real customer.
+A real, long-standing sanctioned entity ("Bank Rossiya") was temporarily
+included here to prove the full pipeline fires correctly on a genuine hit
+(OpenSanctions match -> Claude flags it relevant -> Slack alert -> Notion
+row marked Relevant). That's now been confirmed working end to end, so it
+has been removed — leaving it in would mean every future run re-flags the
+exact same entity with the exact same message forever, which looks like a
+stuck/broken feed rather than live monitoring. If you need to re-verify
+the alert path later (e.g. after a bigger change), temporarily add one
+real sanctioned entity back in, confirm the alert, then remove it again —
+it should be a one-off smoke test, not a permanent list entry.
 
 Individuals are entirely fictional — do not replace these with real
 people's names. Screening a real private individual without their
@@ -49,8 +49,6 @@ TEST_NAMES = [
     {"name": "Diageo plc", "schema": "Company"},
     {"name": "BT Group plc", "schema": "Company"},
     {"name": "J Sainsbury plc", "schema": "Company"},
-    # --- Deliberate known-sanctioned entity (smoke test for the alert path) --
-    {"name": "Bank Rossiya", "schema": "Company"},
     # --- Fictional individuals -----------------------------------------------
     {"name": "Daniel Ashworth", "schema": "Person"},
     {"name": "Priya Chandrasekaran", "schema": "Person"},

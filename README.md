@@ -24,10 +24,30 @@ compliance_monitor/
   slack_notify.py      # Step 5: post to Slack (client-facing digest)
   notion_log.py         # Step 6: log to Notion (full audit trail)
   failure_alert.py       # internal-only "a run broke" notification, separate from Slack step 5
+  report_builder.py      # generates a polished, client-facing HTML report from the Notion audit trail
   main.py                # Step 7: runs steps 1-6 in order
 .github/workflows/
   daily-compliance-monitoring.yml   # runs main.py on a daily schedule
 ```
+
+## Generating a client-facing report
+
+Slack and Notion are the operational output — useful day to day, but not
+something you'd hand to a client. `report_builder.py` reads the Notion
+audit trail for a date range and renders a single self-contained HTML
+report: a summary of what was screened, any genuine findings with plain-
+English explanations and next actions, and a methodology/disclaimer
+section. It only calls Notion, so it's safe to run even if OpenSanctions
+is rate-limited or the daily pipeline is mid-debugging.
+
+```bash
+python -m compliance_monitor.report_builder --days 7 --client "Acme Payments Ltd"
+```
+
+Writes to `reports/compliance_report_<date>.html` by default (override with
+`--out path/to/file.html`). Open it in a browser, or run `open` (macOS) /
+`start` (Windows) on the path it prints. `reports/` is gitignored since a
+real report may contain real client screening data.
 
 ## 1. Accounts and API keys you need before this will run
 

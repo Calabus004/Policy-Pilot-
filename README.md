@@ -151,9 +151,12 @@ that's for us). Deploy config lives in `netlify.toml` (`publish = "web"`).
 
 ```
 web/
-  index.html                       # the whole site — hero, assessment, waitlist gate
+  index.html                       # the whole public site — hero, assessment, waitlist gate
+  privacy.html                      # privacy notice — linked from the consent checkbox on the gate
+  dashboard.html                    # internal scorecard — not linked from the public site
 netlify/functions/
   notify-signup.js                 # sends the follow-up email via Resend when someone finishes
+  get-submissions.js                # powers dashboard.html — password-gated read of Netlify Forms data
 netlify.toml                       # publish dir + functions dir for Netlify
 ```
 
@@ -186,3 +189,35 @@ built-in `fetch` to call Resend's HTTP API directly. To wire it up:
 The function is called from the client the instant someone finishes the
 assessment or uses "skip the questions" — it's fire-and-forget, so a slow or
 failed email send never blocks the on-page confirmation.
+
+**Privacy notice & consent**: `web/privacy.html` is a minimal starting
+template, not a lawyer-reviewed policy — it has placeholder brackets for your
+real company name, address, and contact email that need filling in before
+this collects data from real people. The gate on the main page now has a
+required consent checkbox linking to it, and every submission carries a
+`consent: "yes"` field as a record that it was ticked.
+
+**Internal scorecard (`dashboard.html`)**: a second page, deliberately not
+linked from anywhere on the public site (and marked `noindex` for search
+engines), that shows every lead ranked by `fit_score` — including the
+`fit_tier` and full Q&A that the public page never displays — plus a
+"started but didn't finish" list. It's password-gated through
+`netlify/functions/get-submissions.js`, which reads submissions straight
+from Netlify's own Submissions API server-side. To set it up:
+
+1. In Netlify: **User settings → Applications → Personal access tokens →
+   New access token**. Copy it.
+2. **Site settings → Environment variables**, add:
+   - `NETLIFY_API_TOKEN` — the personal access token from step 1
+   - `DASHBOARD_PASSWORD` — any passphrase you'll type in to view the
+     dashboard (pick something real; this is the only thing standing between
+     the page and everyone's name, email, and answers)
+   - `NETLIFY_SITE_ID` — only needed if the function can't read the site ID
+     automatically; find it under **Site settings → General → Site details**.
+3. Redeploy, then visit `https://<your-site>.netlify.app/dashboard.html`
+   directly (bookmark it — nothing on the public site links to it) and enter
+   the password.
+
+Being unlinked and `noindex` is obscurity, not real security — anyone who
+guesses or is given the URL still hits a working password prompt, so treat
+`DASHBOARD_PASSWORD` as a real credential, not a formality.

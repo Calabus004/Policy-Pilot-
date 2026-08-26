@@ -209,7 +209,18 @@
   }
   input[type="text"]:focus, input[type="email"]:focus { border-color: var(--amber); }
   .honeypot { position: absolute; left: -9999px; top: -9999px; }
-  .gate-actions { margin-top: 28px; }
+  .consent-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 20px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+  .consent-row input { width: 15px; height: 15px; margin-top: 2px; flex-shrink: 0; accent-color: var(--amber); }
+  .consent-row a { color: var(--amber-dim); }
+  .consent-row a:hover { color: var(--amber); }
+  .gate-actions { margin-top: 20px; }
   button.primary-btn {
     width: 100%;
     padding: 13px 16px;
@@ -428,6 +439,11 @@
 
             <p class="honeypot"><label>Leave this blank: <input id="gateHp" /></label></p>
 
+            <label class="consent-row">
+              <input type="checkbox" id="gateConsent" required />
+              I agree to be contacted about Policy Pilot, per the <a href="/privacy.html" target="_blank" rel="noopener">Privacy Notice</a>.
+            </label>
+
             <div class="gate-actions">
               <button type="button" class="primary-btn" id="gateStart">Start the assessment</button>
               <button type="button" class="skip-btn" id="gateSkip">Skip the questions — just add me to the waitlist</button>
@@ -459,10 +475,11 @@
 
     <!-- hidden forms Netlify parses at deploy time; submitted via JS -->
     <form name="assessment-started" data-netlify="true" hidden>
-      <input type="hidden" name="name" /><input type="hidden" name="email" />
+      <input type="hidden" name="name" /><input type="hidden" name="email" /><input type="hidden" name="consent" />
     </form>
     <form name="assessment-completed" data-netlify="true" hidden>
       <input type="hidden" name="name" /><input type="hidden" name="email" /><input type="hidden" name="path" />
+      <input type="hidden" name="consent" />
       <input type="hidden" name="comms" /><input type="hidden" name="docs" /><input type="hidden" name="news" />
       <input type="hidden" name="owner" /><input type="hidden" name="frustration" /><input type="hidden" name="missed" />
       <input type="hidden" name="toolvalue" /><input type="hidden" name="payoff" />
@@ -675,26 +692,29 @@
     }).catch(function () { /* best-effort */ });
   }
 
-  document.getElementById("gateStart").addEventListener("click", function () {
+  function gateValid() {
     var name = document.getElementById("gateName");
     var email = document.getElementById("gateEmail");
-    if (!name.reportValidity() || !email.reportValidity()) return;
-    lead.name = name.value.trim();
-    lead.email = email.value.trim();
+    var consent = document.getElementById("gateConsent");
+    return name.reportValidity() && email.reportValidity() && consent.reportValidity();
+  }
+
+  document.getElementById("gateStart").addEventListener("click", function () {
+    if (!gateValid()) return;
+    lead.name = document.getElementById("gateName").value.trim();
+    lead.email = document.getElementById("gateEmail").value.trim();
     if (!document.getElementById("gateHp").value) {
-      postForm({ "form-name": "assessment-started", name: lead.name, email: lead.email });
+      postForm({ "form-name": "assessment-started", name: lead.name, email: lead.email, consent: "yes" });
     }
     goTo(0);
   });
 
   document.getElementById("gateSkip").addEventListener("click", function () {
-    var name = document.getElementById("gateName");
-    var email = document.getElementById("gateEmail");
-    if (!name.reportValidity() || !email.reportValidity()) return;
-    lead.name = name.value.trim();
-    lead.email = email.value.trim();
+    if (!gateValid()) return;
+    lead.name = document.getElementById("gateName").value.trim();
+    lead.email = document.getElementById("gateEmail").value.trim();
     if (document.getElementById("gateHp").value) return;
-    postForm({ "form-name": "assessment-completed", name: lead.name, email: lead.email, path: "skipped" });
+    postForm({ "form-name": "assessment-completed", name: lead.name, email: lead.email, path: "skipped", consent: "yes" });
     notify(lead.name, lead.email);
     finish();
   });
@@ -744,6 +764,7 @@
       name: lead.name,
       email: lead.email,
       path: "completed",
+      consent: "yes",
       comms: labelFor("comms"),
       docs: labelFor("docs"),
       news: labelFor("news"),

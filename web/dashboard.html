@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Scorecard — internal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ground: #0f141c;
+    --panel: #171e29;
+    --panel-2: #1d2531;
+    --line: #2a3444;
+    --text: #e4e9f1;
+    --text-dim: #8a94a6;
+    --amber: #e2a33f;
+    --amber-dim: #a97a34;
+    --green: #6fae82;
+    --red: #c1615c;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 1.3rem; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--text-dim); font-size: 0.86rem; margin: 0 0 32px; }
+
+  /* ---- password gate ---- */
+  #gate { max-width: 340px; margin: 80px auto 0; text-align: center; }
+  #gate input {
+    width: 100%;
+    padding: 11px 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  #gate input:focus { border-color: var(--amber); }
+  #gate button {
+    width: 100%;
+    padding: 11px 16px;
+    border: 1px solid var(--amber);
+    background: var(--amber);
+    color: #1a1206;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  #gate button:hover { opacity: 0.88; }
+  #gateError { color: var(--red); font-size: 0.8rem; margin-top: 12px; min-height: 1em; }
+
+  /* ---- dashboard ---- */
+  #dash { display: none; }
+  #dash.show { display: block; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 32px; }
+  .stat { background: var(--panel); padding: 18px 20px; }
+  .stat .num { font-family: var(--mono); font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat .lbl { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-top: 4px; }
+
+  h2 { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.03em; margin: 36px 0 14px; color: var(--text-dim); text-transform: uppercase; font-family: var(--mono); font-size: 0.74rem; }
+
+  .lead-card { border: 1px solid var(--line); background: var(--panel); margin-bottom: 10px; }
+  .lead-head {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+  }
+  .tier-chip {
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 3px 9px; border: 1px solid var(--line); flex-shrink: 0;
+  }
+  .tier-chip.hot { color: var(--green); border-color: var(--green); }
+  .tier-chip.warm { color: var(--amber); border-color: var(--amber-dim); }
+  .tier-chip.cold { color: var(--text-dim); }
+  .lead-score { font-family: var(--mono); font-size: 0.9rem; font-variant-numeric: tabular-nums; width: 36px; flex-shrink: 0; }
+  .lead-name { font-weight: 600; font-size: 0.9rem; }
+  .lead-email { color: var(--text-dim); font-size: 0.82rem; margin-left: auto; }
+  .lead-date { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); flex-shrink: 0; white-space: nowrap; }
+
+  .lead-detail { display: none; padding: 0 18px 16px; border-top: 1px dashed var(--line); }
+  .lead-detail.open { display: block; }
+  .qa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; margin-top: 14px; font-size: 0.84rem; }
+  .qa div dt { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 3px; }
+  .qa div dd { margin: 0; }
+
+  .partial-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 18px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    margin-bottom: 6px;
+    font-size: 0.86rem;
+  }
+  .partial-row .lead-email { margin-left: auto; }
+
+  .empty { color: var(--text-dim); font-size: 0.86rem; padding: 16px 0; }
+  #refreshBtn {
+    font-family: var(--mono); font-size: 0.74rem; color: var(--text-dim);
+    background: none; border: 1px solid var(--line); padding: 7px 14px; cursor: pointer;
+  }
+  #refreshBtn:hover { color: var(--amber); border-color: var(--amber-dim); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="gate">
+      <h1>Scorecard</h1>
+      <p class="sub">Internal only. Enter the dashboard password.</p>
+      <input type="password" id="pw" placeholder="Password" />
+      <button type="button" id="pwSubmit">Unlock</button>
+      <p id="gateError"></p>
+    </div>
+
+    <div id="dash">
+      <div style="display:flex; align-items:baseline; justify-content:space-between;">
+        <div>
+          <h1>Scorecard</h1>
+          <p class="sub">Live from Netlify Forms — not linked from the public site.</p>
+        </div>
+        <button type="button" id="refreshBtn">Refresh</button>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="statStarted">–</div><div class="lbl">Started</div></div>
+        <div class="stat"><div class="num" id="statCompleted">–</div><div class="lbl">Completed</div></div>
+        <div class="stat"><div class="num" id="statRate">–</div><div class="lbl">Completion rate</div></div>
+        <div class="stat"><div class="num" id="statAvg">–</div><div class="lbl">Avg. fit score</div></div>
+      </div>
+
+      <h2>Leads, ranked by fit</h2>
+      <div id="leadsList"></div>
+
+      <h2>Started, not finished</h2>
+      <div id="partialList"></div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  var STORAGE_KEY = "pp_dashboard_pw";
+
+  function tierClass(tier) {
+    if (tier === "Hot") return "hot";
+    if (tier === "Warm") return "warm";
+    return "cold";
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function formatDate(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " +
+      d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function render(data) {
+    var completed = data.completed.slice().sort(function (a, b) {
+      return (b.fit_score || 0) - (a.fit_score || 0);
+    });
+    var completedEmails = {};
+    completed.forEach(function (c) { completedEmails[c.email] = true; });
+    var partial = data.started.filter(function (s) { return !completedEmails[s.email]; });
+
+    document.getElementById("statStarted").textContent = data.started.length;
+    document.getElementById("statCompleted").textContent = completed.length;
+    var rate = data.started.length ? Math.round((completed.length / data.started.length) * 100) : 0;
+    document.getElementById("statRate").textContent = rate + "%";
+    var scored = completed.filter(function (c) { return typeof c.fit_score === "number" || (c.fit_score !== "" && !isNaN(parseInt(c.fit_score, 10))); });
+    var avg = scored.length
+      ? Math.round(scored.reduce(function (sum, c) { return sum + parseInt(c.fit_score, 10); }, 0) / scored.length)
+      : 0;
+    document.getElementById("statAvg").textContent = scored.length ? avg : "–";
+
+    var leadsList = document.getElementById("leadsList");
+    leadsList.innerHTML = "";
+    if (!completed.length) {
+      leadsList.innerHTML = '<p class="empty">No completed assessments yet.</p>';
+    }
+    completed.forEach(function (c, i) {
+      var card = document.createElement("div");
+      card.className = "lead-card";
+      var tier = c.fit_tier || "Cold";
+      card.innerHTML =
+        '<div class="lead-head" data-idx="' + i + '">' +
+          '<span class="tier-chip ' + tierClass(tier) + '">' + escapeHtml(tier) + '</span>' +
+          '<span class="lead-score">' + escapeHtml(c.fit_score === "" ? "–" : c.fit_score) + '</span>' +
+          '<span class="lead-name">' + escapeHtml(c.name || "(no name)") + '</span>' +
+          '<span class="lead-email">' + escapeHtml(c.email) + '</span>' +
+          '<span class="lead-date">' + formatDate(c.created_at) + '</span>' +
+        '</div>' +
+        '<div class="lead-detail" id="detail-' + i + '">' +
+          '<div class="qa">' +
+            qaRow("Comms/tracking tools", c.comms) +
+            qaRow("Doc storage", c.docs) +
+            qaRow("Regulatory awareness", c.news) +
+            qaRow("Ownership", c.owner) +
+            qaRow("Biggest frustration", c.frustration) +
+            qaRow("Missed something before", c.missed) +
+            qaRow("Tool would help?", c.toolvalue) +
+            qaRow("Would pay to avoid", c.payoff) +
+            (c.path === "skipped" ? qaRow("Path", "Skipped the questions") : "") +
+          '</div>' +
+        '</div>';
+      leadsList.appendChild(card);
+      card.querySelector(".lead-head").addEventListener("click", function () {
+        document.getElementById("detail-" + i).classList.toggle("open");
+      });
+    });
+
+    var partialList = document.getElementById("partialList");
+    partialList.innerHTML = "";
+    if (!partial.length) {
+      partialList.innerHTML = '<p class="empty">Nobody has abandoned mid-assessment — nice.</p>';
+    }
+    partial.forEach(function (p) {
+      var row = document.createElement("div");
+      row.className = "partial-row";
+      row.innerHTML =
+        '<span class="lead-name">' + escapeHtml(p.name || "(no name)") + '</span>' +
+        '<span class="lead-email">' + escapeHtml(p.email) + '</span>' +
+        '<span class="lead-date">' + formatDate(p.created_at) + '</span>';
+      partialList.appendChild(row);
+    });
+  }
+
+  function qaRow(label, value) {
+    if (!value) return "";
+    return '<div><dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(value) + '</dd></div>';
+  }
+
+  function load(password) {
+    var errorEl = document.getElementById("gateError");
+    errorEl.textContent = "Loading…";
+    fetch("/.netlify/functions/get-submissions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: password })
+    })
+      .then(function (res) {
+        if (res.status === 401) throw new Error("Incorrect password");
+        if (!res.ok) throw new Error("Something went wrong fetching submissions");
+        return res.json();
+      })
+      .then(function (data) {
+        sessionStorage.setItem(STORAGE_KEY, password);
+        document.getElementById("gate").style.display = "none";
+        document.getElementById("dash").classList.add("show");
+        render(data);
+      })
+      .catch(function (err) {
+        errorEl.textContent = err.message;
+      });
+  }
+
+  document.getElementById("pwSubmit").addEventListener("click", function () {
+    load(document.getElementById("pw").value);
+  });
+  document.getElementById("pw").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") load(document.getElementById("pw").value);
+  });
+  document.getElementById("refreshBtn").addEventListener("click", function () {
+    var pw = sessionStorage.getItem(STORAGE_KEY);
+    if (pw) load(pw);
+  });
+
+  var savedPw = sessionStorage.getItem(STORAGE_KEY);
+  if (savedPw) load(savedPw);
+})();
+</script>
+</body>
+</html>

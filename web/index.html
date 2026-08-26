@@ -475,33 +475,37 @@
 <script>
 (function () {
   var QUESTIONS = [
-    { id: "comms", text: "What do you currently use to manage and track compliance-related tasks?", scored: true,
+    { id: "comms", text: "What do you currently use to manage and track compliance-related tasks?", scored: true, freeOther: true,
       options: [
         { v: 0, label: "No real system — mostly email" },
         { v: 1, label: "Spreadsheets and email" },
         { v: 2, label: "Slack/Teams, nothing formal for tracking" },
-        { v: 3, label: "Slack/Teams plus a dedicated tracker (Asana, Notion, Jira…)" }
+        { v: 3, label: "Slack/Teams plus a dedicated tracker (Asana, Notion, Jira…)" },
+        { v: "other", label: "Something else" }
       ]},
-    { id: "docs", text: "Where do you store your compliance policies and documentation?", scored: true,
+    { id: "docs", text: "Where do you store your compliance policies and documentation?", scored: true, freeOther: true,
       options: [
         { v: 0, label: "Wherever someone last saved them" },
         { v: 1, label: "A shared drive, hard to search" },
         { v: 2, label: "A shared drive with some structure" },
-        { v: 3, label: "A dedicated system (Notion, Confluence, a GRC tool)" }
+        { v: 3, label: "A dedicated system (Notion, Confluence, a GRC tool)" },
+        { v: "other", label: "Something else" }
       ]},
-    { id: "news", text: "How does your team find out about regulatory changes that affect you?", scored: true,
+    { id: "news", text: "How does your team find out about regulatory changes that affect you?", scored: true, freeOther: true,
       options: [
         { v: 0, label: "Usually after the fact" },
         { v: 1, label: "Word of mouth — whoever happens to see it" },
         { v: 2, label: "Newsletters and manual checks" },
-        { v: 3, label: "A dedicated process or person monitors this" }
+        { v: 3, label: "A dedicated process or person monitors this" },
+        { v: "other", label: "Something else" }
       ]},
-    { id: "owner", text: "Who owns it when a policy or process needs updating?", scored: true,
+    { id: "owner", text: "Who owns it when a policy or process needs updating?", scored: true, freeOther: true,
       options: [
         { v: 0, label: "No one, really" },
         { v: 1, label: "Whoever notices first" },
         { v: 2, label: "Shared across the team, but unclear" },
-        { v: 3, label: "One clear, named owner" }
+        { v: 3, label: "One clear, named owner" },
+        { v: "other", label: "Something else" }
       ]},
     { id: "frustration", text: "What's the most frustrating part of staying compliant day-to-day?", scored: false, freeOther: true,
       options: [
@@ -511,19 +515,21 @@
         { v: "unknown", label: "Not knowing what we don't know" },
         { v: "other", label: "Something else" }
       ]},
-    { id: "missed", text: "Has your team ever missed, or nearly missed, something regulatory-important?", scored: true,
+    { id: "missed", text: "Has your team ever missed, or nearly missed, something regulatory-important?", scored: true, freeOther: true,
       options: [
         { v: 0, label: "Yes, and it cost us" },
         { v: 1, label: "Honestly, we wouldn't know if we did" },
         { v: 2, label: "Yes, but we caught it in time" },
-        { v: 3, label: "Not that we know of — and we'd know" }
+        { v: 3, label: "Not that we know of — and we'd know" },
+        { v: "other", label: "Something else" }
       ]},
-    { id: "toolvalue", text: "If a tool automatically screened your customers, tracked regulatory change, and logged an audit trail for you — how much would that change things?", scored: true, weight: 2,
+    { id: "toolvalue", text: "If a tool automatically screened your customers, tracked regulatory change, and logged an audit trail for you — how much would that change things?", scored: true, weight: 2, freeOther: true,
       options: [
         { v: 0, label: "Not really, we've got it covered" },
         { v: 1, label: "Maybe a little" },
         { v: 2, label: "Yes, noticeably" },
-        { v: 3, label: "Yes, enormously" }
+        { v: 3, label: "Yes, enormously" },
+        { v: "other", label: "Something else" }
       ]},
     { id: "payoff", text: "If you could pay to never deal with one of these again, what would it be?", scored: false, freeOther: true,
       options: [
@@ -693,19 +699,40 @@
     finish();
   });
 
-  function pct(sum, max) { return Math.round((sum / max) * 100); }
+  // Resolves what a question's answer should read as in stored data: the
+  // picked option's label, or the free-text value when "other" was chosen.
+  function labelFor(id) {
+    var v = answers[id];
+    if (v === undefined) return "";
+    if (v === "other") return answers[id + "_other"] || "other";
+    return LABELS[id][v] || "";
+  }
 
   function computeFit() {
-    var raw = answers.comms + answers.docs + answers.news + answers.owner + answers.missed + (answers.toolvalue * 2);
-    var score = pct(raw, 21);
+    // "Something else" answers are excluded from both sides of the ratio,
+    // rather than scored as 0 — an unclear signal shouldn't drag the score
+    // down as if it were a bad answer.
+    var weighted = [
+      { id: "comms", weight: 1 },
+      { id: "docs", weight: 1 },
+      { id: "news", weight: 1 },
+      { id: "owner", weight: 1 },
+      { id: "missed", weight: 1 },
+      { id: "toolvalue", weight: 2 }
+    ];
+    var raw = 0, max = 0;
+    weighted.forEach(function (q) {
+      var v = answers[q.id];
+      if (typeof v === "number") { raw += v * q.weight; max += 3 * q.weight; }
+    });
+    if (max === 0) return { score: "", tier: "Unscored" };
+    var score = Math.round((raw / max) * 100);
     var tier = score >= 75 ? "Hot" : score >= 45 ? "Warm" : "Cold";
     return { score: score, tier: tier };
   }
 
   function showResults() {
-    var frustrationLabel = answers.frustration === "other" ? (answers.frustration_other || "something else") : LABELS.frustration[answers.frustration];
-    var payoffLabel = answers.payoff === "other" ? (answers.payoff_other || "something else") : LABELS.payoff[answers.payoff];
-    document.getElementById("quote").innerHTML = "You told us the biggest headache is <strong>" + frustrationLabel + "</strong>, and what you'd pay to never deal with again is <strong>" + payoffLabel + "</strong>. That's exactly why we built Policy Pilot.";
+    document.getElementById("quote").innerHTML = "You told us the biggest headache is <strong>" + labelFor("frustration") + "</strong>, and what you'd pay to never deal with again is <strong>" + labelFor("payoff") + "</strong>. That's exactly why we built Policy Pilot.";
     showStage(results);
     progressRow.classList.add("hidden");
   }
@@ -717,14 +744,14 @@
       name: lead.name,
       email: lead.email,
       path: "completed",
-      comms: LABELS.comms[answers.comms] || "",
-      docs: LABELS.docs[answers.docs] || "",
-      news: LABELS.news[answers.news] || "",
-      owner: LABELS.owner[answers.owner] || "",
-      frustration: answers.frustration === "other" ? (answers.frustration_other || "other") : LABELS.frustration[answers.frustration] || "",
-      missed: LABELS.missed[answers.missed] || "",
-      toolvalue: LABELS.toolvalue[answers.toolvalue] || "",
-      payoff: answers.payoff === "other" ? (answers.payoff_other || "other") : LABELS.payoff[answers.payoff] || "",
+      comms: labelFor("comms"),
+      docs: labelFor("docs"),
+      news: labelFor("news"),
+      owner: labelFor("owner"),
+      frustration: labelFor("frustration"),
+      missed: labelFor("missed"),
+      toolvalue: labelFor("toolvalue"),
+      payoff: labelFor("payoff"),
       fit_score: fit.score,
       fit_tier: fit.tier
     });

@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Policy Pilot — Join the Waitlist</title>
-<meta name="description" content="Policy Pilot automates sanctions screening, regulatory news monitoring, and audit-trail reporting for fintechs. Join the waitlist for early access." />
+<meta name="description" content="Take the 2-minute compliance pre-flight checklist, get a personalised readiness score, and join the waitlist for Policy Pilot early access." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -74,9 +74,7 @@
     box-shadow: 0 0 0 3px rgba(111,174,130,0.15);
     animation: pulse 2.4s ease-in-out infinite;
   }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
-  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
   /* ---- hero ---- */
   .hero {
@@ -107,7 +105,7 @@
     max-width: 46ch;
     margin: 0 0 28px;
   }
-  .cta-row { display: flex; gap: 14px; }
+  .cta-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
   .cta-link {
     font-family: var(--mono);
     font-size: 0.82rem;
@@ -121,20 +119,19 @@
     display: inline-block;
   }
   .cta-link:hover { border-color: var(--amber); color: var(--amber); }
+  .cta-secondary {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--line);
+  }
+  .cta-secondary:hover { color: var(--amber); border-color: var(--amber-dim); }
 
   /* ---- radar graphic ---- */
-  .radar {
-    position: relative;
-    width: 100%;
-    max-width: 340px;
-    aspect-ratio: 1;
-    margin: 0 auto;
-  }
+  .radar { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1; margin: 0 auto; }
   .radar svg { width: 100%; height: 100%; }
-  .radar-sweep {
-    transform-origin: 170px 170px;
-    animation: sweep 6s linear infinite;
-  }
+  .radar-sweep { transform-origin: 170px 170px; animation: sweep 6s linear infinite; }
   @keyframes sweep { to { transform: rotate(360deg); } }
 
   /* ---- gauge strip ---- */
@@ -144,70 +141,40 @@
     gap: 1px;
     background: var(--line);
     border: 1px solid var(--line);
-    margin-bottom: 64px;
+    margin-bottom: 56px;
   }
-  .gauge {
-    background: var(--panel);
-    padding: 26px 22px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-  }
-  .dial {
-    position: relative;
-    width: 64px; height: 64px; flex-shrink: 0;
-    border-radius: 50%;
-  }
-  .dial::before {
-    content: "";
-    position: absolute; inset: 6px;
-    border-radius: 50%;
-    background: var(--panel);
-  }
+  .gauge { background: var(--panel); padding: 26px 22px; display: flex; align-items: center; gap: 18px; }
+  .dial { position: relative; width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%; }
+  .dial::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--panel); }
   .dial span {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono);
-    font-weight: 500;
-    font-size: 0.78rem;
-    font-variant-numeric: tabular-nums;
-    color: var(--text);
+    font-family: var(--mono); font-weight: 500; font-size: 0.78rem;
+    font-variant-numeric: tabular-nums; color: var(--text);
   }
-  .gauge h3 {
-    margin: 0 0 4px;
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-  .gauge p {
-    margin: 0;
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    font-family: var(--mono);
-    letter-spacing: 0.02em;
-  }
+  .gauge h3 { margin: 0 0 4px; font-size: 0.9rem; font-weight: 600; }
+  .gauge p { margin: 0; font-size: 0.78rem; color: var(--text-dim); font-family: var(--mono); letter-spacing: 0.02em; }
 
-  /* ---- intake panel ---- */
-  .intake {
+  /* ---- shared bracket-corner panel ---- */
+  .bracket-panel {
     position: relative;
-    max-width: 520px;
-    margin: 0 auto 80px;
     border: 1px solid var(--line);
     background: var(--panel);
   }
-  .intake::before, .intake::after,
-  .intake .bl, .intake .br {
+  .bracket-panel > .bl, .bracket-panel > .br,
+  .bracket-panel::before, .bracket-panel::after {
     content: "";
     position: absolute;
     width: 16px; height: 16px;
     border-color: var(--amber-dim);
     border-style: solid;
   }
-  .intake::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
-  .intake::after { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
-  .intake .bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
-  .intake .br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+  .bracket-panel::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .bracket-panel::after { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+  .bracket-panel > .bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+  .bracket-panel > .br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
 
-  .intake-head {
+  .panel-head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -215,27 +182,122 @@
     border-bottom: 1px dashed var(--line);
     font-family: var(--mono);
   }
-  .intake-head .title {
+  .panel-head .title { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+  .panel-head .ref { font-size: 0.78rem; color: var(--amber); }
+  .panel-body { padding: 28px; }
+  .panel-body h2 { margin: 0 0 6px; font-size: 1.2rem; font-weight: 600; }
+  .panel-body p.lead { margin: 0 0 22px; color: var(--text-dim); font-size: 0.88rem; }
+
+  /* ---- checklist quiz ---- */
+  .checklist { max-width: 560px; margin: 0 auto 40px; }
+  .skip-line { text-align: center; margin-bottom: 20px; }
+  .skip-line a { font-family: var(--mono); font-size: 0.76rem; color: var(--text-dim); text-decoration: none; border-bottom: 1px dashed var(--line); }
+  .skip-line a:hover { color: var(--amber); border-color: var(--amber-dim); }
+
+  .progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .progress-label { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; }
+  .progress-track { flex: 1; height: 3px; background: var(--line); }
+  .progress-fill { height: 100%; background: var(--amber); width: 12.5%; transition: width 0.2s ease; }
+
+  .qtext { font-size: 1.08rem; font-weight: 600; margin: 0 0 18px; text-wrap: balance; }
+  .option-list { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    display: flex; align-items: flex-start; gap: 10px;
+    border: 1px solid var(--line);
+    padding: 13px 16px;
+    cursor: pointer;
+    font-size: 0.92rem;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .option::before {
+    content: "[ ]";
+    font-family: var(--mono);
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .option:hover { border-color: var(--amber-dim); }
+  .option.selected { border-color: var(--amber); background: rgba(226,163,63,0.08); }
+  .option.selected::before { content: "[x]"; color: var(--amber); }
+  .option input[type="radio"] { display: none; }
+  .other-text {
+    margin-top: 4px;
+    width: 100%;
+    padding: 11px 4px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    outline: none;
+    display: none;
+  }
+  .other-text.show { display: block; }
+  .other-text:focus { border-color: var(--amber); }
+
+  .qnav { display: flex; justify-content: space-between; margin-top: 26px; }
+  .qnav button {
+    font-family: var(--mono);
     font-size: 0.78rem;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
+    padding: 11px 18px;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: transparent;
     color: var(--text-dim);
   }
-  .intake-head .ref {
-    font-size: 0.78rem;
-    color: var(--amber);
-  }
-  .intake-body { padding: 28px; }
-  .intake-body h2 {
-    margin: 0 0 6px;
-    font-size: 1.2rem;
+  .qnav button.primary {
+    border-color: var(--amber);
+    background: var(--amber);
+    color: #1a1206;
     font-weight: 600;
   }
-  .intake-body p.lead {
-    margin: 0 0 22px;
-    color: var(--text-dim);
-    font-size: 0.88rem;
+  .qnav button.primary:disabled { background: transparent; color: var(--line); border-color: var(--line); cursor: not-allowed; }
+  .qnav button.ghost:hover { border-color: var(--amber-dim); color: var(--text); }
+
+  .step { display: none; }
+  .step.active { display: block; }
+
+  /* ---- results ---- */
+  .results { display: none; }
+  .results.show { display: block; }
+  .score-row { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; flex-wrap: wrap; }
+  .score-num { font-family: var(--mono); font-size: 2.6rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--amber); line-height: 1; }
+  .score-tier {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
   }
+  .score-tier.good { color: var(--green); }
+  .score-tier.mid { color: var(--amber); }
+  .score-tier.low { color: var(--red); }
+  .score-desc { color: var(--text-dim); font-size: 0.92rem; margin: 0 0 24px; max-width: 48ch; }
+
+  .subgauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 24px; }
+  .subgauge { background: var(--panel-2); padding: 18px 16px; text-align: center; }
+  .subgauge .dial { width: 52px; height: 52px; margin: 0 auto 10px; }
+  .subgauge .dial span { font-size: 0.7rem; }
+  .subgauge h4 { margin: 0; font-size: 0.8rem; font-weight: 600; }
+
+  .quote {
+    border-left: 2px solid var(--amber-dim);
+    padding: 4px 0 4px 16px;
+    margin: 0 0 26px;
+    font-size: 0.88rem;
+    color: var(--text-dim);
+  }
+  .quote strong { color: var(--text); font-weight: 500; }
+
+  .restart-line { text-align: center; margin-top: 6px; }
+  .restart-line a { font-family: var(--mono); font-size: 0.74rem; color: var(--text-dim); text-decoration: none; border-bottom: 1px dashed var(--line); }
+  .restart-line a:hover { color: var(--amber); border-color: var(--amber-dim); }
+
+  /* ---- intake panel ---- */
+  .intake { max-width: 520px; margin: 0 auto 80px; }
   label.field-label {
     display: block;
     font-family: var(--mono);
@@ -260,10 +322,7 @@
   }
   input[type="text"]:focus, input[type="email"]:focus { border-color: var(--amber); }
   .checkboxes { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-  .checkboxes label {
-    display: flex; align-items: center; gap: 10px;
-    color: var(--text); font-size: 0.88rem; margin: 0;
-  }
+  .checkboxes label { display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 0.88rem; margin: 0; }
   .checkboxes input { width: 15px; height: 15px; accent-color: var(--amber); }
   .honeypot { position: absolute; left: -9999px; top: -9999px; }
   button[type="submit"] {
@@ -282,12 +341,8 @@
     transition: opacity 0.15s;
   }
   button[type="submit"]:hover { opacity: 0.88; }
-  .fine-print {
-    margin-top: 14px;
-    font-size: 0.76rem;
-    color: var(--text-dim);
-    text-align: center;
-  }
+  button:focus-visible, .cta-link:focus-visible, input:focus-visible, .option:focus-within { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .fine-print { margin-top: 14px; font-size: 0.76rem; color: var(--text-dim); text-align: center; }
 
   footer {
     border-top: 1px solid var(--line);
@@ -302,6 +357,7 @@
     .hero { grid-template-columns: 1fr; }
     .radar { display: none; }
     .gauges { grid-template-columns: 1fr; }
+    .subgauges { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -329,7 +385,8 @@
           automatically, every day, before your team logs on.
         </p>
         <div class="cta-row">
-          <a class="cta-link" href="#intake">Join the waitlist</a>
+          <a class="cta-link" href="#checklist">Take the pre-flight checklist</a>
+          <a class="cta-secondary" href="#intake">or join the waitlist directly</a>
         </div>
       </div>
       <div class="radar" aria-hidden="true">
@@ -358,39 +415,89 @@
     <div class="gauges">
       <div class="gauge">
         <div class="dial" style="background: conic-gradient(var(--amber) 0% 70%, var(--line) 70% 100%);"><span>0.70</span></div>
-        <div>
-          <h3>Sanctions screening</h3>
-          <p>MATCH CONFIDENCE THRESHOLD</p>
-        </div>
+        <div><h3>Sanctions screening</h3><p>MATCH CONFIDENCE THRESHOLD</p></div>
       </div>
       <div class="gauge">
         <div class="dial" style="background: conic-gradient(var(--amber) 0% 100%);"><span>24H</span></div>
-        <div>
-          <h3>Regulatory news</h3>
-          <p>FCA LOOKBACK WINDOW</p>
-        </div>
+        <div><h3>Regulatory news</h3><p>FCA LOOKBACK WINDOW</p></div>
       </div>
       <div class="gauge">
         <div class="dial" style="background: conic-gradient(var(--amber) 0% 100%);"><span>100%</span></div>
-        <div>
-          <h3>Audit trail</h3>
-          <p>OF SCREENINGS LOGGED</p>
+        <div><h3>Audit trail</h3><p>OF SCREENINGS LOGGED</p></div>
+      </div>
+    </div>
+
+    <!-- ============ CHECKLIST QUIZ ============ -->
+    <div class="checklist" id="checklist">
+      <p class="skip-line"><a href="#intake">In a hurry? Skip to the waitlist →</a></p>
+
+      <div class="bracket-panel" id="quizCard">
+        <span class="bl"></span><span class="br"></span>
+        <div class="panel-head">
+          <span class="title">Pre-flight checklist</span>
+          <span class="ref">2 MIN</span>
+        </div>
+        <div class="panel-body">
+          <div class="progress-row">
+            <span class="progress-label" id="progressLabel">ITEM 1 / 8</span>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          </div>
+
+          <form id="quizForm">
+            <!-- Steps injected by JS -->
+          </form>
+
+          <div class="results" id="results">
+            <div class="score-row">
+              <span class="score-num" id="scoreNum">0</span>
+              <span class="score-tier" id="scoreTier">—</span>
+            </div>
+            <p class="score-desc" id="scoreDesc"></p>
+
+            <div class="subgauges">
+              <div class="subgauge"><div class="dial" id="dialProcess"><span>—</span></div><h4>Process</h4></div>
+              <div class="subgauge"><div class="dial" id="dialVisibility"><span>—</span></div><h4>Visibility</h4></div>
+              <div class="subgauge"><div class="dial" id="dialResilience"><span>—</span></div><h4>Resilience</h4></div>
+            </div>
+
+            <p class="quote" id="quote"></p>
+
+            <a class="cta-link" href="#intake" style="display:block; text-align:center;">Get notified when we launch</a>
+            <p class="restart-line"><a href="#" id="restartLink">Retake the checklist</a></p>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="intake" id="intake">
+    <!-- hidden form Netlify parses at deploy time; submitted via JS once the checklist completes -->
+    <form name="scorecard" data-netlify="true" hidden>
+      <input type="hidden" name="comms" />
+      <input type="hidden" name="docs" />
+      <input type="hidden" name="news" />
+      <input type="hidden" name="owner" />
+      <input type="hidden" name="frustration" />
+      <input type="hidden" name="missed" />
+      <input type="hidden" name="toolvalue" />
+      <input type="hidden" name="payoff" />
+      <input type="hidden" name="score" />
+      <input type="hidden" name="tier" />
+    </form>
+
+    <!-- ============ WAITLIST INTAKE ============ -->
+    <div class="bracket-panel intake" id="intake">
       <span class="bl"></span><span class="br"></span>
-      <div class="intake-head">
+      <div class="panel-head">
         <span class="title">Waitlist intake</span>
         <span class="ref">FORM WL-01</span>
       </div>
-      <div class="intake-body">
+      <div class="panel-body">
         <h2>Get early access</h2>
         <p class="lead">We're onboarding a small number of teams before public launch. Tell us a bit about you and we'll reach out.</p>
 
         <form name="waitlist" method="POST" action="/thank-you.html" data-netlify="true" netlify-honeypot="bot-field">
           <input type="hidden" name="form-name" value="waitlist" />
+          <input type="hidden" name="scorecard_score" id="wlScore" />
+          <input type="hidden" name="scorecard_tier" id="wlTier" />
           <p class="honeypot">
             <label>Don't fill this out if you're human: <input name="bot-field" /></label>
           </p>
@@ -420,5 +527,260 @@
 
     <footer>&copy; 2026 POLICY PILOT — BUILT FOR TEAMS WHO TAKE COMPLIANCE SERIOUSLY</footer>
   </div>
+
+<script>
+(function () {
+  var QUESTIONS = [
+    { id: "comms", text: "What tools do you use for team comms and tracking tasks?", scored: true,
+      options: [
+        { v: 0, label: "No real system — mostly email" },
+        { v: 1, label: "Spreadsheets and email" },
+        { v: 2, label: "Slack/Teams, nothing formal for tracking" },
+        { v: 3, label: "Slack/Teams plus a proper tracker (Asana, Notion, Jira…)" }
+      ]},
+    { id: "docs", text: "Where do you store compliance docs or policies?", scored: true,
+      options: [
+        { v: 0, label: "Wherever someone last saved them" },
+        { v: 1, label: "A shared drive, hard to search" },
+        { v: 2, label: "A shared drive with some structure" },
+        { v: 3, label: "A dedicated system (Notion, Confluence, a GRC tool)" }
+      ]},
+    { id: "news", text: "How do you find out about new regulatory changes?", scored: true,
+      options: [
+        { v: 0, label: "Usually after the fact" },
+        { v: 1, label: "Word of mouth — whoever happens to see it" },
+        { v: 2, label: "Newsletters and manual checks" },
+        { v: 3, label: "A dedicated process or person monitors this" }
+      ]},
+    { id: "owner", text: "Who's responsible when something needs updating?", scored: true,
+      options: [
+        { v: 0, label: "No one, really" },
+        { v: 1, label: "Whoever notices first" },
+        { v: 2, label: "Shared across the team, but unclear" },
+        { v: 3, label: "One clear, named owner" }
+      ]},
+    { id: "frustration", text: "What's the most frustrating part about staying compliant?", scored: false, freeOther: true,
+      options: [
+        { v: "manual", label: "Doing it all manually" },
+        { v: "late", label: "Reacting too late to changes" },
+        { v: "proving", label: "Proving we did the right thing" },
+        { v: "unknown", label: "Not knowing what we don't know" },
+        { v: "other", label: "Something else" }
+      ]},
+    { id: "missed", text: "Have you ever missed something important?", scored: true,
+      options: [
+        { v: 0, label: "Yes, and it cost us" },
+        { v: 1, label: "Honestly, we wouldn't know if we did" },
+        { v: 2, label: "Yes, but we caught it in time" },
+        { v: 3, label: "Not that we know of — and we'd know" }
+      ]},
+    { id: "toolvalue", text: "If a tool automatically screened customers, watched for regulatory change, and logged an audit trail — would that save time or reduce stress?", scored: true,
+      options: [
+        { v: 0, label: "Not really, we've got it covered" },
+        { v: 1, label: "Maybe a little" },
+        { v: 2, label: "Yes, noticeably" },
+        { v: 3, label: "Yes, enormously" }
+      ]},
+    { id: "payoff", text: "What would you pay to never deal with again?", scored: false, freeOther: true,
+      options: [
+        { v: "screening", label: "Manually screening customers" },
+        { v: "tracking", label: "Chasing down regulatory updates" },
+        { v: "reports", label: "Building audit reports" },
+        { v: "chasing", label: "Chasing colleagues for sign-off" },
+        { v: "other", label: "Something else" }
+      ]}
+  ];
+
+  var LABELS = {};
+  QUESTIONS.forEach(function (q) {
+    LABELS[q.id] = {};
+    q.options.forEach(function (o) { LABELS[q.id][o.v] = o.label; });
+  });
+
+  var answers = {};
+  var current = 0;
+
+  var form = document.getElementById("quizForm");
+  var progressLabel = document.getElementById("progressLabel");
+  var progressFill = document.getElementById("progressFill");
+  var results = document.getElementById("results");
+
+  function buildStep(q, index) {
+    var step = document.createElement("div");
+    step.className = "step" + (index === 0 ? " active" : "");
+    step.dataset.index = index;
+
+    var qtext = document.createElement("p");
+    qtext.className = "qtext";
+    qtext.textContent = q.text;
+    step.appendChild(qtext);
+
+    var list = document.createElement("div");
+    list.className = "option-list";
+
+    q.options.forEach(function (opt, i) {
+      var label = document.createElement("label");
+      label.className = "option";
+      var input = document.createElement("input");
+      input.type = "radio";
+      input.name = q.id;
+      input.value = opt.v;
+      label.appendChild(input);
+      var span = document.createElement("span");
+      span.textContent = opt.label;
+      label.appendChild(span);
+      list.appendChild(label);
+
+      label.addEventListener("click", function () {
+        list.querySelectorAll(".option").forEach(function (o) { o.classList.remove("selected"); });
+        label.classList.add("selected");
+        input.checked = true;
+        answers[q.id] = opt.v;
+        var otherBox = step.querySelector(".other-text");
+        if (otherBox) {
+          if (opt.v === "other") { otherBox.classList.add("show"); otherBox.focus(); }
+          else { otherBox.classList.remove("show"); answers[q.id + "_other"] = ""; }
+        }
+        updateNavState(step);
+      });
+    });
+    step.appendChild(list);
+
+    if (q.freeOther) {
+      var otherInput = document.createElement("input");
+      otherInput.type = "text";
+      otherInput.className = "other-text";
+      otherInput.placeholder = "Tell us more…";
+      otherInput.addEventListener("input", function () { answers[q.id + "_other"] = otherInput.value; });
+      step.appendChild(otherInput);
+    }
+
+    var nav = document.createElement("div");
+    nav.className = "qnav";
+    var back = document.createElement("button");
+    back.type = "button";
+    back.className = "ghost";
+    back.textContent = "Back";
+    back.disabled = index === 0;
+    back.addEventListener("click", function () { goTo(index - 1); });
+    var next = document.createElement("button");
+    next.type = "button";
+    next.className = "primary";
+    next.textContent = index === QUESTIONS.length - 1 ? "See my results" : "Next";
+    next.disabled = true;
+    next.addEventListener("click", function () {
+      if (index === QUESTIONS.length - 1) { showResults(); }
+      else { goTo(index + 1); }
+    });
+    nav.appendChild(back);
+    nav.appendChild(next);
+    step.appendChild(nav);
+
+    return step;
+  }
+
+  function updateNavState(step) {
+    var next = step.querySelector(".qnav .primary");
+    var q = QUESTIONS[step.dataset.index];
+    next.disabled = !(q.id in answers);
+  }
+
+  QUESTIONS.forEach(function (q, i) { form.appendChild(buildStep(q, i)); });
+
+  function goTo(index) {
+    current = index;
+    form.querySelectorAll(".step").forEach(function (s) { s.classList.remove("active"); });
+    form.querySelector('.step[data-index="' + index + '"]').classList.add("active");
+    progressLabel.textContent = "ITEM " + (index + 1) + " / " + QUESTIONS.length;
+    progressFill.style.width = (((index + 1) / QUESTIONS.length) * 100) + "%";
+  }
+
+  function pct(sum, max) { return Math.round((sum / max) * 100); }
+
+  function dialStyle(p) {
+    return "background: conic-gradient(var(--amber) 0% " + p + "%, var(--line) " + p + "% 100%);";
+  }
+
+  function tierFor(p) {
+    if (p >= 80) return { key: "good", label: "Cleared for takeoff", desc: "Your compliance process is already running close to autopilot. Policy Pilot keeps it that way as you scale." };
+    if (p >= 50) return { key: "mid", label: "Holding pattern", desc: "You're managing — but it's manual, and one missed update away from turning into a real problem." };
+    return { key: "low", label: "Grounded", desc: "Right now compliance runs on tribal knowledge and luck. That's exactly the gap Policy Pilot is built to close." };
+  }
+
+  function showResults() {
+    form.style.display = "none";
+    var process = pct((answers.comms + answers.owner), 6);
+    var visibility = pct((answers.docs + answers.news), 6);
+    var resilience = pct((answers.missed + answers.toolvalue), 6);
+    var overall = Math.round((process + visibility + resilience) / 3);
+
+    document.getElementById("scoreNum").textContent = overall;
+    var tier = tierFor(overall);
+    var tierEl = document.getElementById("scoreTier");
+    tierEl.textContent = tier.label;
+    tierEl.className = "score-tier " + tier.key;
+    document.getElementById("scoreDesc").textContent = tier.desc;
+
+    document.getElementById("dialProcess").setAttribute("style", dialStyle(process));
+    document.getElementById("dialProcess").querySelector("span").textContent = process + "%";
+    document.getElementById("dialVisibility").setAttribute("style", dialStyle(visibility));
+    document.getElementById("dialVisibility").querySelector("span").textContent = visibility + "%";
+    document.getElementById("dialResilience").setAttribute("style", dialStyle(resilience));
+    document.getElementById("dialResilience").querySelector("span").textContent = resilience + "%";
+
+    var frustrationLabel = answers.frustration === "other" ? (answers.frustration_other || "something else") : LABELS.frustration[answers.frustration];
+    var payoffLabel = answers.payoff === "other" ? (answers.payoff_other || "something else") : LABELS.payoff[answers.payoff];
+    document.getElementById("quote").innerHTML = "Biggest frustration: <strong>" + frustrationLabel + "</strong>. What you'd pay to never deal with again: <strong>" + payoffLabel + "</strong>.";
+
+    document.getElementById("wlScore").value = overall;
+    document.getElementById("wlTier").value = tier.label;
+
+    results.classList.add("show");
+    progressLabel.textContent = "COMPLETE";
+    progressFill.style.width = "100%";
+
+    submitScorecard(overall, tier.label);
+  }
+
+  function encode(data) {
+    return Object.keys(data).map(function (k) {
+      return encodeURIComponent(k) + "=" + encodeURIComponent(data[k]);
+    }).join("&");
+  }
+
+  function submitScorecard(score, tierLabel) {
+    var payload = {
+      "form-name": "scorecard",
+      comms: LABELS.comms[answers.comms] || "",
+      docs: LABELS.docs[answers.docs] || "",
+      news: LABELS.news[answers.news] || "",
+      owner: LABELS.owner[answers.owner] || "",
+      frustration: answers.frustration === "other" ? (answers.frustration_other || "other") : LABELS.frustration[answers.frustration] || "",
+      missed: LABELS.missed[answers.missed] || "",
+      toolvalue: LABELS.toolvalue[answers.toolvalue] || "",
+      payoff: answers.payoff === "other" ? (answers.payoff_other || "other") : LABELS.payoff[answers.payoff] || "",
+      score: score,
+      tier: tierLabel
+    };
+    fetch("/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: encode(payload)
+    }).catch(function () { /* best-effort — a failed background submit shouldn't block the UI */ });
+  }
+
+  document.getElementById("restartLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    answers = {};
+    form.querySelectorAll(".option.selected").forEach(function (o) { o.classList.remove("selected"); });
+    form.querySelectorAll("input[type=radio]").forEach(function (i) { i.checked = false; });
+    form.querySelectorAll(".other-text").forEach(function (i) { i.classList.remove("show"); i.value = ""; });
+    form.querySelectorAll(".qnav .primary").forEach(function (b) { b.disabled = true; });
+    results.classList.remove("show");
+    form.style.display = "block";
+    goTo(0);
+  });
+})();
+</script>
 </body>
 </html>

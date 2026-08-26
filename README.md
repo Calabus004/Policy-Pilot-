@@ -140,3 +140,49 @@ To activate it:
 - **Failure alerts stay private**: `failure_alert.py` posts to `INTERNAL_ALERT_WEBHOOK_URL` only — never to the client-facing `SLACK_WEBHOOK_URL` channel. If a run breaks, only you get pinged; the client just sees the next successful digest whenever it arrives.
 - **Retries**: OpenSanctions requests automatically retry on HTTP 429 (rate limited) with backoff, up to 3 attempts — useful when testing with several manual runs in quick succession, and for resilience in production.
 - **Before pitching to a real client**: OpenSanctions' free API tier is for evaluation/individual use, not for reselling a service built on it — check their commercial licensing terms before using real client data or charging for this.
+
+## Waitlist & assessment site (`web/`)
+
+A separate static site, deployed on Netlify from this same repo, that runs a
+"pre-flight compliance assessment" ahead of the product waitlist: it captures
+a name + email, walks through 8 questions about how a team currently handles
+compliance, and shows back an empathetic result (never the internal score —
+that's for us). Deploy config lives in `netlify.toml` (`publish = "web"`).
+
+```
+web/
+  index.html                       # the whole site — hero, assessment, waitlist gate
+netlify/functions/
+  notify-signup.js                 # sends the follow-up email via Resend when someone finishes
+netlify.toml                       # publish dir + functions dir for Netlify
+```
+
+**Data capture**: two Netlify Forms, detected automatically from the hidden
+`<form>` markup in `index.html` and submitted via JS `fetch` (no page reload):
+
+- `assessment-started` — name + email, fired the moment someone passes the
+  email gate, before they've answered anything. Catches partial leads.
+- `assessment-completed` — name, email, all 8 answers, and an **internal-only**
+  `fit_score` (0–100) / `fit_tier` (Cold/Warm/Hot) used to gauge how strong a
+  candidate someone is for the product. Never shown in the UI.
+
+View submissions under **Site settings → Forms** in Netlify, and turn on
+email notifications there if you want to be pinged per signup.
+
+**Follow-up email (Resend)**: `netlify/functions/notify-signup.js` is a
+zero-dependency Netlify Function — no `npm install` needed, it uses the
+built-in `fetch` to call Resend's HTTP API directly. To wire it up:
+
+1. Create an account at [resend.com](https://resend.com/) and grab an API key.
+2. In Netlify: **Site settings → Environment variables**, add:
+   - `RESEND_API_KEY` — your Resend key
+   - `RESEND_FROM_EMAIL` (optional) — e.g. `Policy Pilot <hello@yourdomain.com>`.
+     Without this it falls back to Resend's shared `onboarding@resend.dev`
+     sender, which only delivers to the email address on your Resend account
+     until you verify your own sending domain.
+3. Redeploy (**Deploys → Trigger deploy**) so the function picks up the new
+   env vars.
+
+The function is called from the client the instant someone finishes the
+assessment or uses "skip the questions" — it's fire-and-forget, so a slow or
+failed email send never blocks the on-page confirmation.

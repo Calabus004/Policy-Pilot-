@@ -132,7 +132,15 @@
     gap: 1px;
     background: var(--line);
     border: 1px solid var(--line);
-    margin-bottom: 56px;
+    margin-bottom: 10px;
+  }
+  .gauges-caption {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-align: center;
+    max-width: 56ch;
+    margin: 0 auto 56px;
   }
   .gauge { background: var(--panel); padding: 26px 22px; display: flex; align-items: center; gap: 18px; }
   .dial { position: relative; width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%; }
@@ -301,7 +309,7 @@
   .qnav button.primary:disabled { background: transparent; color: var(--line); border-color: var(--line); cursor: not-allowed; }
   .qnav button.ghost:hover { border-color: var(--amber-dim); color: var(--text); }
 
-  .stage { display: none; opacity: 0; transform: translateY(6px); transition: opacity 0.22s ease, transform 0.22s ease; }
+  .stage { display: none; opacity: 0; transform: translateY(4px); transition: opacity 0.32s ease, transform 0.32s ease; }
   .stage.active { display: block; }
   .stage.active.in { opacity: 1; transform: translateY(0); }
 
@@ -431,7 +439,7 @@
     <div class="gauges">
       <div class="gauge">
         <div class="dial" style="background: conic-gradient(var(--amber) 0% 70%, var(--line) 70% 100%);"><span>0.70</span></div>
-        <div><h3>Sanctions screening</h3><p>MATCH CONFIDENCE THRESHOLD</p></div>
+        <div><h3>Sanctions screening</h3><p>MIN. CONFIDENCE TO FLAG</p></div>
       </div>
       <div class="gauge">
         <div class="dial" style="background: conic-gradient(var(--amber) 0% 100%);"><span>24H</span></div>
@@ -442,6 +450,7 @@
         <div><h3>Audit trail</h3><p>OF SCREENINGS LOGGED</p></div>
       </div>
     </div>
+    <p class="gauges-caption">Every flagged match — high confidence or low — is escalated for human review before any action is taken. Nothing is auto-dismissed.</p>
 
     <!-- ============ ASSESSMENT ============ -->
     <div class="checklist" id="checklist">
@@ -629,9 +638,18 @@
   var progressFill = document.getElementById("progressFill");
 
   function showStage(el) {
-    document.querySelectorAll(".stage").forEach(function (s) { s.classList.remove("active", "in"); });
-    el.classList.add("active");
-    requestAnimationFrame(function () { el.classList.add("in"); });
+    var current = document.querySelector(".stage.active");
+    if (current && current !== el) {
+      current.classList.remove("in");
+      setTimeout(function () {
+        current.classList.remove("active");
+        el.classList.add("active");
+        requestAnimationFrame(function () { el.classList.add("in"); });
+      }, 260);
+    } else {
+      el.classList.add("active");
+      requestAnimationFrame(function () { el.classList.add("in"); });
+    }
   }
 
   function buildStep(q, index) {
@@ -676,7 +694,7 @@
           if (otherBox) { otherBox.classList.remove("show"); answers[q.id + "_other"] = ""; }
           if (continueBtn) continueBtn.style.display = "none";
           step.dataset.advancing = "1";
-          setTimeout(function () { advance(index); }, 380);
+          setTimeout(function () { advance(index); }, 280);
         }
       });
     });

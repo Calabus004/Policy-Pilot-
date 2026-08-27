@@ -305,9 +305,31 @@
   .stage.active { display: block; }
   .stage.active.in { opacity: 1; transform: translateY(0); }
 
-  /* ---- results (no score shown — internal only) ---- */
+  /* ---- results (score + summary) ---- */
   #results h2 { margin: 0 0 10px; font-size: 1.3rem; font-weight: 600; text-wrap: balance; }
   #results p.body-copy { color: var(--text-dim); font-size: 0.94rem; margin: 0 0 20px; }
+
+  .score-row { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; flex-wrap: wrap; }
+  .score-num { font-family: var(--mono); font-size: 2.6rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--amber); line-height: 1; }
+  .score-tier {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+  }
+  .score-tier.good { color: var(--green); }
+  .score-tier.mid { color: var(--amber); }
+  .score-tier.low { color: var(--red); }
+  .score-desc { color: var(--text-dim); font-size: 0.92rem; margin: 0 0 24px; max-width: 48ch; }
+
+  .subgauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 24px; }
+  .subgauge { background: var(--panel-2); padding: 18px 16px; text-align: center; }
+  .subgauge .dial { width: 52px; height: 52px; margin: 0 auto 10px; }
+  .subgauge .dial span { font-size: 0.7rem; }
+  .subgauge h4 { margin: 0; font-size: 0.8rem; font-weight: 600; }
+
   .quote {
     border-left: 2px solid var(--amber-dim);
     padding: 4px 0 4px 16px;
@@ -316,6 +338,10 @@
     color: var(--text-dim);
   }
   .quote strong { color: var(--text); font-weight: 500; }
+
+  @media (max-width: 480px) {
+    .subgauges { grid-template-columns: 1fr; }
+  }
 
   /* ---- confirmation ---- */
   #confirm { text-align: center; }
@@ -454,10 +480,20 @@
           <!-- QUESTIONS -->
           <form id="quizForm"></form>
 
-          <!-- RESULTS (empathy + single CTA — no score shown) -->
+          <!-- RESULTS (score + summary) -->
           <div class="stage" id="results">
-            <h2>You're not the only one dealing with this.</h2>
-            <p class="body-copy">Most compliance teams we talk to are patching this together with spreadsheets, Slack threads, and whoever remembers to check. You shouldn't have to run compliance that way.</p>
+            <div class="score-row">
+              <span class="score-num" id="scoreNum">0</span>
+              <span class="score-tier" id="scoreTier">—</span>
+            </div>
+            <p class="score-desc" id="scoreDesc"></p>
+
+            <div class="subgauges">
+              <div class="subgauge"><div class="dial" id="dialProcess"><span>—</span></div><h4>Process</h4></div>
+              <div class="subgauge"><div class="dial" id="dialVisibility"><span>—</span></div><h4>Visibility</h4></div>
+              <div class="subgauge"><div class="dial" id="dialResilience"><span>—</span></div><h4>Resilience</h4></div>
+            </div>
+
             <p class="quote" id="quote"></p>
             <button type="button" class="primary-btn" id="finishBtn">Yes — tell me when Policy Pilot launches</button>
           </div>
@@ -641,7 +677,7 @@
     var next = document.createElement("button");
     next.type = "button";
     next.className = "primary";
-    next.textContent = index === QUESTIONS.length - 1 ? "See what's next" : "Next";
+    next.textContent = index === QUESTIONS.length - 1 ? "See my results" : "Next";
     next.disabled = true;
     next.addEventListener("click", function () {
       if (index === QUESTIONS.length - 1) { showResults(); }
@@ -751,7 +787,54 @@
     return { score: score, tier: tier };
   }
 
+  // Sub-score shown to the respondent (unweighted — different from the
+  // internal fit_score below, which weights toolvalue double for lead
+  // qualification). "Something else" answers are excluded rather than
+  // scored as 0, same reasoning as computeFit().
+  function subScore(ids) {
+    var raw = 0, max = 0;
+    ids.forEach(function (id) {
+      var v = answers[id];
+      if (typeof v === "number") { raw += v; max += 3; }
+    });
+    return max > 0 ? Math.round((raw / max) * 100) : null;
+  }
+
+  function dialStyle(p) {
+    return "background: conic-gradient(var(--amber) 0% " + p + "%, var(--line) " + p + "% 100%);";
+  }
+
+  function tierFor(p) {
+    if (p >= 80) return { key: "good", label: "Cleared for takeoff", desc: "Your compliance process is already running close to autopilot. Policy Pilot keeps it that way as you scale." };
+    if (p >= 50) return { key: "mid", label: "Holding pattern", desc: "You're managing — but it's manual, and one missed update away from turning into a real problem." };
+    return { key: "low", label: "Grounded", desc: "Right now compliance runs on tribal knowledge and luck. That's exactly the gap Policy Pilot is built to close." };
+  }
+
+  function fillDial(id, score) {
+    var dial = document.getElementById(id);
+    var pct = score === null ? 0 : score;
+    dial.setAttribute("style", dialStyle(pct));
+    dial.querySelector("span").textContent = score === null ? "—" : score + "%";
+  }
+
   function showResults() {
+    var process = subScore(["comms", "owner"]);
+    var visibility = subScore(["docs", "news"]);
+    var resilience = subScore(["missed", "toolvalue"]);
+    var parts = [process, visibility, resilience].filter(function (v) { return v !== null; });
+    var overall = parts.length ? Math.round(parts.reduce(function (a, b) { return a + b; }, 0) / parts.length) : 0;
+
+    document.getElementById("scoreNum").textContent = overall;
+    var tier = tierFor(overall);
+    var tierEl = document.getElementById("scoreTier");
+    tierEl.textContent = tier.label;
+    tierEl.className = "score-tier " + tier.key;
+    document.getElementById("scoreDesc").textContent = tier.desc;
+
+    fillDial("dialProcess", process);
+    fillDial("dialVisibility", visibility);
+    fillDial("dialResilience", resilience);
+
     document.getElementById("quote").innerHTML = "You told us the biggest headache is <strong>" + labelFor("frustration") + "</strong>, and what you'd pay to never deal with again is <strong>" + labelFor("payoff") + "</strong>. That's exactly why we built Policy Pilot.";
     showStage(results);
     progressRow.classList.add("hidden");

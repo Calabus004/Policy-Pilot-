@@ -807,6 +807,14 @@
     return LABELS[id][v] || "";
   }
 
+  // For 5 of the 6 scored questions, a LOW raw answer (0) means worse
+  // practice / more need — so risk/fit contribution is (3 - v). toolvalue is
+  // the odd one out: a HIGH raw answer (3, "yes enormously") already means
+  // more expressed need, so it contributes directly, not inverted.
+  function riskContribution(id, v) {
+    return id === "toolvalue" ? v : (3 - v);
+  }
+
   function computeFit() {
     // "Something else" answers are excluded from both sides of the ratio,
     // rather than scored as 0 — an unclear signal shouldn't drag the score
@@ -822,7 +830,7 @@
     var raw = 0, max = 0;
     weighted.forEach(function (q) {
       var v = answers[q.id];
-      if (typeof v === "number") { raw += v * q.weight; max += 3 * q.weight; }
+      if (typeof v === "number") { raw += riskContribution(q.id, v) * q.weight; max += 3 * q.weight; }
     });
     if (max === 0) return { score: "", tier: "Unscored" };
     var score = Math.round((raw / max) * 100);
@@ -840,7 +848,7 @@
     var raw = 0, max = 0;
     ids.forEach(function (id) {
       var v = answers[id];
-      if (typeof v === "number") { raw += (3 - v); max += 3; }
+      if (typeof v === "number") { raw += riskContribution(id, v); max += 3; }
     });
     return max > 0 ? Math.round((raw / max) * 100) : null;
   }

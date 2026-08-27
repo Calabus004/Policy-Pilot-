@@ -76,6 +76,45 @@
   .stat .lbl { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-top: 4px; }
 
   h2 { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.03em; margin: 36px 0 14px; color: var(--text-dim); text-transform: uppercase; font-family: var(--mono); font-size: 0.74rem; }
+  h2 .hint { text-transform: none; letter-spacing: 0; color: var(--text-dim); opacity: 0.7; }
+
+  /* ---- aggregate insights ---- */
+  .opportunity {
+    border-left: 2px solid var(--amber);
+    background: rgba(226,163,63,0.06);
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    margin-bottom: 20px;
+  }
+  .opportunity strong { color: var(--amber); }
+  .breakdown-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 8px; }
+  .breakdown {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 14px 16px;
+  }
+  .breakdown h4 { margin: 0 0 10px; font-size: 0.78rem; font-weight: 600; }
+  .bar-row { margin-bottom: 8px; font-size: 0.78rem; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 3px; color: var(--text-dim); }
+  .bar-label .count { font-family: var(--mono); color: var(--text); flex-shrink: 0; }
+  .bar-track { height: 5px; background: var(--line); }
+  .bar-fill { height: 100%; background: var(--amber); }
+  .quotes-box {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 14px 16px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .quote-row { font-size: 0.82rem; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .quote-row:last-child { border-bottom: none; }
+  .quote-row .qsrc { color: var(--text-dim); font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .empty-small { color: var(--text-dim); font-size: 0.82rem; }
+
+  @media (max-width: 700px) {
+    .breakdown-grid { grid-template-columns: 1fr; }
+  }
 
   .lead-card { border: 1px solid var(--line); background: var(--panel); margin-bottom: 10px; }
   .lead-head {
@@ -157,6 +196,9 @@
         <div class="stat"><div class="num" id="statAvg">–</div><div class="lbl">Avg. fit score</div></div>
       </div>
 
+      <h2>Aggregate insights <span class="hint">(across all completed assessments)</span></h2>
+      <div id="aggregate"></div>
+
       <h2>Leads, ranked by fit</h2>
       <div id="leadsList"></div>
 
@@ -187,6 +229,95 @@
       d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   }
 
+  // The five questions where a LOW raw answer means worse practice (used
+  // here just to point at the single biggest structural gap; the labels
+  // stored in Netlify are the human-readable text, not the 0-3 codes, so we
+  // match on the known worst-case string for each field).
+  var GAP_FIELDS = [
+    { id: "comms", label: "Comms/tracking tools", worst: "No real system — mostly email", phrase: "have no real system for tracking compliance tasks" },
+    { id: "docs", label: "Doc storage", worst: "Wherever someone last saved them", phrase: "have no consistent place to store compliance docs" },
+    { id: "news", label: "Regulatory awareness", worst: "Usually after the fact", phrase: "usually find out about regulatory changes after the fact" },
+    { id: "owner", label: "Ownership", worst: "No one, really", phrase: "have no clear owner when something needs updating" },
+    { id: "missed", label: "Missed something before", worst: "Yes, and it cost us", phrase: "have already missed something that cost them" }
+  ];
+  var BREAKDOWN_FIELDS = [
+    { id: "comms", label: "Comms/tracking tools" },
+    { id: "docs", label: "Doc storage" },
+    { id: "news", label: "Regulatory awareness" },
+    { id: "owner", label: "Ownership" },
+    { id: "missed", label: "Missed something before" },
+    { id: "toolvalue", label: "Would a tool like this help?" },
+    { id: "frustration", label: "Biggest frustration" },
+    { id: "payoff", label: "Would pay to avoid" }
+  ];
+
+  function tally(rows, field) {
+    var counts = {};
+    rows.forEach(function (r) {
+      var v = (r[field] || "").trim();
+      if (!v) return;
+      counts[v] = (counts[v] || 0) + 1;
+    });
+    var total = Object.keys(counts).reduce(function (sum, k) { return sum + counts[k]; }, 0);
+    return Object.keys(counts)
+      .map(function (k) { return { label: k, count: counts[k], pct: total ? Math.round((counts[k] / total) * 100) : 0 }; })
+      .sort(function (a, b) { return b.count - a.count; });
+  }
+
+  function renderAggregate(completedRows) {
+    var el = document.getElementById("aggregate");
+    if (!completedRows.length) {
+      el.innerHTML = '<p class="empty-small">No completed assessments yet — insights will appear here once a few come in.</p>';
+      return;
+    }
+
+    var n = completedRows.length;
+    var best = null;
+    GAP_FIELDS.forEach(function (g) {
+      var withValue = completedRows.filter(function (r) { return r[g.id]; });
+      var worstCount = withValue.filter(function (r) { return r[g.id] === g.worst; }).length;
+      var pct = withValue.length ? Math.round((worstCount / withValue.length) * 100) : 0;
+      if (!best || pct > best.pct) best = { label: g.label, phrase: g.phrase, pct: pct };
+    });
+
+    var html = "";
+    if (best && best.pct > 0) {
+      html += '<div class="opportunity"><strong>' + best.label + '</strong> is the sharpest gap: ' +
+        '<strong>' + best.pct + '% of ' + n + '</strong> respondent' + (n === 1 ? "" : "s") + ' ' + escapeHtml(best.phrase) + '.</div>';
+    }
+
+    html += '<div class="breakdown-grid">';
+    BREAKDOWN_FIELDS.forEach(function (f) {
+      var t = tally(completedRows, f.id);
+      html += '<div class="breakdown"><h4>' + escapeHtml(f.label) + '</h4>';
+      if (!t.length) {
+        html += '<p class="empty-small">No answers yet.</p>';
+      } else {
+        t.forEach(function (row) {
+          html += '<div class="bar-row">' +
+            '<div class="bar-label"><span>' + escapeHtml(row.label) + '</span><span class="count">' + row.count + ' &middot; ' + row.pct + '%</span></div>' +
+            '<div class="bar-track"><div class="bar-fill" style="width:' + row.pct + '%"></div></div>' +
+          '</div>';
+        });
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+
+    var quotes = [];
+    completedRows.forEach(function (r) {
+      if (r.low_risk_feedback) quotes.push({ src: "Low-risk feedback", text: r.low_risk_feedback });
+    });
+    if (quotes.length) {
+      html += '<div class="breakdown" style="margin-top:14px;"><h4>What would make it worth switching (low-risk respondents)</h4>' +
+        '<div class="quotes-box">' +
+        quotes.map(function (q) { return '<div class="quote-row"><div class="qsrc">' + escapeHtml(q.src) + '</div>' + escapeHtml(q.text) + '</div>'; }).join("") +
+        '</div></div>';
+    }
+
+    el.innerHTML = html;
+  }
+
   function render(data) {
     var rows = data.submissions || [];
     var startedRows = rows.filter(function (r) { return r.stage === "started"; });
@@ -211,6 +342,8 @@
       ? Math.round(scored.reduce(function (sum, c) { return sum + parseInt(c.fit_score, 10); }, 0) / scored.length)
       : 0;
     document.getElementById("statAvg").textContent = scored.length ? avg : "–";
+
+    renderAggregate(completedRows);
 
     var leadsList = document.getElementById("leadsList");
     leadsList.innerHTML = "";

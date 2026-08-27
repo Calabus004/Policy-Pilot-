@@ -319,10 +319,12 @@
     padding: 6px 12px;
     border: 1px solid var(--line);
   }
-  .score-tier.good { color: var(--green); }
-  .score-tier.mid { color: var(--amber); }
-  .score-tier.low { color: var(--red); }
+  .score-tier.low-risk { color: var(--green); }
+  .score-tier.moderate-risk { color: var(--amber); }
+  .score-tier.high-risk { color: var(--red); }
+  .score-meta { color: var(--text-dim); font-size: 0.8rem; margin: 0 0 14px; max-width: 48ch; }
   .score-desc { color: var(--text-dim); font-size: 0.92rem; margin: 0 0 24px; max-width: 48ch; }
+  .score-desc strong { color: var(--text); font-weight: 500; }
 
   .subgauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 24px; }
   .subgauge { background: var(--panel-2); padding: 18px 16px; text-align: center; }
@@ -482,16 +484,18 @@
 
           <!-- RESULTS (score + summary) -->
           <div class="stage" id="results">
+            <div class="eyebrow" style="margin-bottom:10px;">Your compliance risk score</div>
             <div class="score-row">
               <span class="score-num" id="scoreNum">0</span>
               <span class="score-tier" id="scoreTier">—</span>
             </div>
+            <p class="score-meta">Higher = more exposure in how your team handles compliance today — not a judgment on your team.</p>
             <p class="score-desc" id="scoreDesc"></p>
 
             <div class="subgauges">
-              <div class="subgauge"><div class="dial" id="dialProcess"><span>—</span></div><h4>Process</h4></div>
-              <div class="subgauge"><div class="dial" id="dialVisibility"><span>—</span></div><h4>Visibility</h4></div>
-              <div class="subgauge"><div class="dial" id="dialResilience"><span>—</span></div><h4>Resilience</h4></div>
+              <div class="subgauge"><div class="dial" id="dialProcess"><span>—</span></div><h4>Process risk</h4></div>
+              <div class="subgauge"><div class="dial" id="dialVisibility"><span>—</span></div><h4>Visibility risk</h4></div>
+              <div class="subgauge"><div class="dial" id="dialResilience"><span>—</span></div><h4>Resilience risk</h4></div>
             </div>
 
             <p class="quote" id="quote"></p>
@@ -787,40 +791,52 @@
     return { score: score, tier: tier };
   }
 
-  // Sub-score shown to the respondent (unweighted — different from the
-  // internal fit_score below, which weights toolvalue double for lead
-  // qualification). "Something else" answers are excluded rather than
-  // scored as 0, same reasoning as computeFit().
-  function subScore(ids) {
+  // Risk shown to the respondent: higher = more exposure = a stronger case
+  // for the product. Built from the same 0-3 answers as computeFit() below,
+  // but inverted (3 - v instead of v) and unweighted — this is meant to
+  // read as "how exposed is your process", not "how likely are you to buy",
+  // which is what the internal fit_score is for. "Something else" answers
+  // are excluded from the ratio rather than scored as maximum risk.
+  function riskScore(ids) {
     var raw = 0, max = 0;
     ids.forEach(function (id) {
       var v = answers[id];
-      if (typeof v === "number") { raw += v; max += 3; }
+      if (typeof v === "number") { raw += (3 - v); max += 3; }
     });
     return max > 0 ? Math.round((raw / max) * 100) : null;
   }
 
-  function dialStyle(p) {
-    return "background: conic-gradient(var(--amber) 0% " + p + "%, var(--line) " + p + "% 100%);";
+  function dialStyle(p, color) {
+    return "background: conic-gradient(" + color + " 0% " + p + "%, var(--line) " + p + "% 100%);";
   }
 
-  function tierFor(p) {
-    if (p >= 80) return { key: "good", label: "Cleared for takeoff", desc: "Your compliance process is already running close to autopilot. Policy Pilot keeps it that way as you scale." };
-    if (p >= 50) return { key: "mid", label: "Holding pattern", desc: "You're managing — but it's manual, and one missed update away from turning into a real problem." };
-    return { key: "low", label: "Grounded", desc: "Right now compliance runs on tribal knowledge and luck. That's exactly the gap Policy Pilot is built to close." };
+  function tierFor(risk) {
+    if (risk >= 70) return {
+      key: "high-risk", label: "High risk", color: "var(--red)",
+      desc: "You're carrying real exposure today — this is exactly where Policy Pilot pays for itself."
+    };
+    if (risk >= 40) return {
+      key: "moderate-risk", label: "Moderate risk", color: "var(--amber)",
+      desc: "You're getting by, but gaps like this are exactly where things slip through. Policy Pilot closes them."
+    };
+    return {
+      key: "low-risk", label: "Low risk", color: "var(--green)",
+      desc: "You're ahead of most teams we talk to. Policy Pilot would mainly save you the manual grind, not rescue you from a miss."
+    };
   }
 
-  function fillDial(id, score) {
+  function fillDial(id, risk) {
     var dial = document.getElementById(id);
-    var pct = score === null ? 0 : score;
-    dial.setAttribute("style", dialStyle(pct));
-    dial.querySelector("span").textContent = score === null ? "—" : score + "%";
+    var pct = risk === null ? 0 : risk;
+    var color = risk === null ? "var(--line)" : tierFor(risk).color;
+    dial.setAttribute("style", dialStyle(pct, color));
+    dial.querySelector("span").textContent = risk === null ? "—" : risk + "%";
   }
 
   function showResults() {
-    var process = subScore(["comms", "owner"]);
-    var visibility = subScore(["docs", "news"]);
-    var resilience = subScore(["missed", "toolvalue"]);
+    var process = riskScore(["comms", "owner"]);
+    var visibility = riskScore(["docs", "news"]);
+    var resilience = riskScore(["missed", "toolvalue"]);
     var parts = [process, visibility, resilience].filter(function (v) { return v !== null; });
     var overall = parts.length ? Math.round(parts.reduce(function (a, b) { return a + b; }, 0) / parts.length) : 0;
 
@@ -829,7 +845,7 @@
     var tierEl = document.getElementById("scoreTier");
     tierEl.textContent = tier.label;
     tierEl.className = "score-tier " + tier.key;
-    document.getElementById("scoreDesc").textContent = tier.desc;
+    document.getElementById("scoreDesc").innerHTML = "<strong>" + tier.label + ".</strong> " + tier.desc;
 
     fillDial("dialProcess", process);
     fillDial("dialVisibility", visibility);

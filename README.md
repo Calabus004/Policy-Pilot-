@@ -160,16 +160,23 @@ netlify/functions/
 netlify.toml                       # publish dir + functions dir for Netlify
 ```
 
-**Data capture**: two Netlify Forms, detected automatically from the hidden
-`<form>` markup in `index.html` and submitted via JS `fetch` (no page reload):
+**Data capture**: a single Netlify Form named `assessment`, detected
+automatically from the hidden `<form>` markup in `index.html` and submitted
+via JS `fetch` (no page reload) at three different moments, told apart by a
+`stage` field:
 
-- `assessment-started` — name + email, fired the moment someone passes the
-  email gate, before they've answered anything. Catches partial leads.
-- `assessment-completed` — name, email, all 8 answers, and an **internal-only**
-  `fit_score` (0–100) / `fit_tier` (Cold/Warm/Hot) used to gauge how strong a
-  candidate someone is for the product. Never shown in the UI.
+- `stage=started` — name + email, fired the moment someone passes the email
+  gate, before they've answered anything. Catches partial leads.
+- `stage=skipped` — someone used "skip the questions" — name + email only,
+  no quiz answers.
+- `stage=completed` — name, email, all 8 answers, the `risk_score` (0–100) /
+  `risk_tier` (Low/Moderate/High risk) shown back to them on screen, and a
+  separate **internal-only** `fit_score` / `fit_tier` (Cold/Warm/Hot) that
+  gauges how strong a candidate someone is for the product — this one is
+  never shown in the UI.
 
-View submissions under **Site settings → Forms** in Netlify, and turn on
+Everything lands in the same form in **Site settings → Forms** in Netlify —
+there's only one form to check, not several. Turn on
 email notifications there if you want to be pinged per signup.
 
 **Follow-up email (Resend)**: `netlify/functions/notify-signup.js` is a

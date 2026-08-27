@@ -533,12 +533,12 @@
       </div>
     </div>
 
-    <!-- hidden forms Netlify parses at deploy time; submitted via JS -->
-    <form name="assessment-started" data-netlify="true" hidden>
-      <input type="hidden" name="name" /><input type="hidden" name="email" /><input type="hidden" name="consent" />
-    </form>
-    <form name="assessment-completed" data-netlify="true" hidden>
-      <input type="hidden" name="name" /><input type="hidden" name="email" /><input type="hidden" name="path" />
+    <!-- Single hidden form Netlify parses at deploy time; submitted via JS.
+         "stage" tells the three moments apart (started/skipped/completed) so
+         everything lands in one place in the Netlify Forms dashboard instead
+         of being split across separate forms. -->
+    <form name="assessment" data-netlify="true" hidden>
+      <input type="hidden" name="stage" /><input type="hidden" name="name" /><input type="hidden" name="email" />
       <input type="hidden" name="consent" />
       <input type="hidden" name="comms" /><input type="hidden" name="docs" /><input type="hidden" name="news" />
       <input type="hidden" name="owner" /><input type="hidden" name="frustration" /><input type="hidden" name="missed" />
@@ -783,7 +783,7 @@
     lead.name = document.getElementById("gateName").value.trim();
     lead.email = document.getElementById("gateEmail").value.trim();
     if (!document.getElementById("gateHp").value) {
-      postForm({ "form-name": "assessment-started", name: lead.name, email: lead.email, consent: "yes" });
+      postForm({ "form-name": "assessment", stage: "started", name: lead.name, email: lead.email, consent: "yes" });
     }
     goTo(0);
   });
@@ -793,7 +793,7 @@
     lead.name = document.getElementById("gateName").value.trim();
     lead.email = document.getElementById("gateEmail").value.trim();
     if (document.getElementById("gateHp").value) return;
-    postForm({ "form-name": "assessment-completed", name: lead.name, email: lead.email, path: "skipped", consent: "yes" });
+    postForm({ "form-name": "assessment", stage: "skipped", name: lead.name, email: lead.email, consent: "yes" });
     notify(lead.name, lead.email);
     finish();
   });
@@ -904,10 +904,10 @@
   document.getElementById("finishBtn").addEventListener("click", function () {
     var fit = computeFit();
     postForm({
-      "form-name": "assessment-completed",
+      "form-name": "assessment",
+      stage: "completed",
       name: lead.name,
       email: lead.email,
-      path: "completed",
       consent: "yes",
       comms: labelFor("comms"),
       docs: labelFor("docs"),

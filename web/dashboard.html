@@ -188,18 +188,25 @@
   }
 
   function render(data) {
-    var completed = data.completed.slice().sort(function (a, b) {
-      return (b.fit_score || 0) - (a.fit_score || 0);
-    });
-    var completedEmails = {};
-    completed.forEach(function (c) { completedEmails[c.email] = true; });
-    var partial = data.started.filter(function (s) { return !completedEmails[s.email]; });
+    var rows = data.submissions || [];
+    var startedRows = rows.filter(function (r) { return r.stage === "started"; });
+    var completedRows = rows.filter(function (r) { return r.stage === "completed"; });
+    var skippedRows = rows.filter(function (r) { return r.stage === "skipped"; });
 
-    document.getElementById("statStarted").textContent = data.started.length;
-    document.getElementById("statCompleted").textContent = completed.length;
-    var rate = data.started.length ? Math.round((completed.length / data.started.length) * 100) : 0;
+    var completed = completedRows.concat(skippedRows).sort(function (a, b) {
+      var av = (a.fit_score === "" || a.fit_score == null) ? -1 : parseInt(a.fit_score, 10);
+      var bv = (b.fit_score === "" || b.fit_score == null) ? -1 : parseInt(b.fit_score, 10);
+      return bv - av;
+    });
+    var convertedEmails = {};
+    completed.forEach(function (c) { convertedEmails[c.email] = true; });
+    var partial = startedRows.filter(function (s) { return !convertedEmails[s.email]; });
+
+    document.getElementById("statStarted").textContent = startedRows.length;
+    document.getElementById("statCompleted").textContent = completedRows.length;
+    var rate = startedRows.length ? Math.round((completedRows.length / startedRows.length) * 100) : 0;
     document.getElementById("statRate").textContent = rate + "%";
-    var scored = completed.filter(function (c) { return typeof c.fit_score === "number" || (c.fit_score !== "" && !isNaN(parseInt(c.fit_score, 10))); });
+    var scored = completedRows.filter(function (c) { return typeof c.fit_score === "number" || (c.fit_score !== "" && !isNaN(parseInt(c.fit_score, 10))); });
     var avg = scored.length
       ? Math.round(scored.reduce(function (sum, c) { return sum + parseInt(c.fit_score, 10); }, 0) / scored.length)
       : 0;
@@ -235,7 +242,7 @@
             qaRow("Missed something before", c.missed) +
             qaRow("Tool would help?", c.toolvalue) +
             qaRow("Would pay to avoid", c.payoff) +
-            (c.path === "skipped" ? qaRow("Path", "Skipped the questions") : "") +
+            (c.stage === "skipped" ? qaRow("Path", "Skipped the questions") : "") +
           '</div>' +
           (c.low_risk_feedback
             ? '<div class="feedback-callout"><dt>What would make it worth switching</dt><dd>' + escapeHtml(c.low_risk_feedback) + '</dd></div>'

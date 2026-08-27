@@ -341,6 +341,10 @@
   }
   .quote strong { color: var(--text); font-weight: 500; }
 
+  .low-risk-block { display: none; border-top: 1px dashed var(--line); padding-top: 20px; margin-bottom: 6px; }
+  .low-risk-block.show { display: block; }
+  .low-risk-block .body-copy { color: var(--text-dim); font-size: 0.88rem; margin: 0 0 16px; }
+
   @media (max-width: 480px) {
     .subgauges { grid-template-columns: 1fr; }
   }
@@ -499,6 +503,13 @@
             </div>
 
             <p class="quote" id="quote"></p>
+
+            <div id="lowRiskBlock" class="low-risk-block">
+              <p class="body-copy">Even a solid process has a bad week — Policy Pilot's job is to make sure that week never turns into an incident, without adding anything to your team's plate. Teams in your position mostly use it as a second set of eyes and a ready-made audit trail, not a rescue plan.</p>
+              <label class="field-label" for="lowRiskFeedback">What would make it worth switching for a team like yours?</label>
+              <input type="text" id="lowRiskFeedback" placeholder="Optional — totally fine to skip" />
+            </div>
+
             <button type="button" class="primary-btn" id="finishBtn">Yes — tell me when Policy Pilot launches</button>
           </div>
 
@@ -523,6 +534,8 @@
       <input type="hidden" name="comms" /><input type="hidden" name="docs" /><input type="hidden" name="news" />
       <input type="hidden" name="owner" /><input type="hidden" name="frustration" /><input type="hidden" name="missed" />
       <input type="hidden" name="toolvalue" /><input type="hidden" name="payoff" />
+      <input type="hidden" name="risk_score" /><input type="hidden" name="risk_tier" />
+      <input type="hidden" name="low_risk_feedback" />
       <input type="hidden" name="fit_score" /><input type="hidden" name="fit_tier" />
     </form>
 
@@ -648,16 +661,23 @@
       list.appendChild(label);
 
       label.addEventListener("click", function () {
+        if (step.dataset.advancing === "1") return;
         list.querySelectorAll(".option").forEach(function (o) { o.classList.remove("selected"); });
         label.classList.add("selected");
         input.checked = true;
         answers[q.id] = opt.v;
         var otherBox = step.querySelector(".other-text");
-        if (otherBox) {
-          if (opt.v === "other") { otherBox.classList.add("show"); otherBox.focus(); }
-          else { otherBox.classList.remove("show"); answers[q.id + "_other"] = ""; }
+        var continueBtn = step.querySelector(".continue-btn");
+        if (opt.v === "other") {
+          // Give them room to type instead of auto-advancing out from under them.
+          if (otherBox) { otherBox.classList.add("show"); otherBox.focus(); }
+          if (continueBtn) continueBtn.style.display = "inline-block";
+        } else {
+          if (otherBox) { otherBox.classList.remove("show"); answers[q.id + "_other"] = ""; }
+          if (continueBtn) continueBtn.style.display = "none";
+          step.dataset.advancing = "1";
+          setTimeout(function () { advance(index); }, 380);
         }
-        updateNavState(step, q);
       });
     });
     step.appendChild(list);
@@ -678,25 +698,25 @@
     back.className = "ghost";
     back.textContent = "Back";
     back.addEventListener("click", function () { goTo(index - 1); });
-    var next = document.createElement("button");
-    next.type = "button";
-    next.className = "primary";
-    next.textContent = index === QUESTIONS.length - 1 ? "See my results" : "Next";
-    next.disabled = true;
-    next.addEventListener("click", function () {
-      if (index === QUESTIONS.length - 1) { showResults(); }
-      else { goTo(index + 1); }
-    });
     nav.appendChild(back);
-    nav.appendChild(next);
+
+    if (q.freeOther) {
+      var continueBtn = document.createElement("button");
+      continueBtn.type = "button";
+      continueBtn.className = "primary continue-btn";
+      continueBtn.textContent = index === QUESTIONS.length - 1 ? "See my results" : "Continue";
+      continueBtn.style.display = "none";
+      continueBtn.addEventListener("click", function () { advance(index); });
+      nav.appendChild(continueBtn);
+    }
     step.appendChild(nav);
 
     return step;
   }
 
-  function updateNavState(step, q) {
-    var next = step.querySelector(".qnav .primary");
-    next.disabled = !(q.id in answers);
+  function advance(index) {
+    if (index === QUESTIONS.length - 1) { showResults(); }
+    else { goTo(index + 1); }
   }
 
   QUESTIONS.forEach(function (q, i) { quizForm.appendChild(buildStep(q, i)); });
@@ -704,6 +724,7 @@
   function goTo(index) {
     if (index < 0) { showStage(gate); progressRow.classList.add("hidden"); return; }
     var step = quizForm.querySelector('.stage[data-index="' + index + '"]');
+    step.dataset.advancing = "0";
     showStage(step);
     progressRow.classList.remove("hidden");
     progressLabel.textContent = "ITEM " + (index + 1) + " / " + QUESTIONS.length;
@@ -833,6 +854,8 @@
     dial.querySelector("span").textContent = risk === null ? "—" : risk + "%";
   }
 
+  var lastRisk = { score: 0, tier: "" };
+
   function showResults() {
     var process = riskScore(["comms", "owner"]);
     var visibility = riskScore(["docs", "news"]);
@@ -842,6 +865,7 @@
 
     document.getElementById("scoreNum").textContent = overall;
     var tier = tierFor(overall);
+    lastRisk = { score: overall, tier: tier.label };
     var tierEl = document.getElementById("scoreTier");
     tierEl.textContent = tier.label;
     tierEl.className = "score-tier " + tier.key;
@@ -852,6 +876,9 @@
     fillDial("dialResilience", resilience);
 
     document.getElementById("quote").innerHTML = "You told us the biggest headache is <strong>" + labelFor("frustration") + "</strong>, and what you'd pay to never deal with again is <strong>" + labelFor("payoff") + "</strong>. That's exactly why we built Policy Pilot.";
+
+    document.getElementById("lowRiskBlock").classList.toggle("show", tier.key === "low-risk");
+
     showStage(results);
     progressRow.classList.add("hidden");
   }
@@ -872,6 +899,9 @@
       missed: labelFor("missed"),
       toolvalue: labelFor("toolvalue"),
       payoff: labelFor("payoff"),
+      risk_score: lastRisk.score,
+      risk_tier: lastRisk.tier,
+      low_risk_feedback: document.getElementById("lowRiskFeedback").value.trim(),
       fit_score: fit.score,
       fit_tier: fit.tier
     });

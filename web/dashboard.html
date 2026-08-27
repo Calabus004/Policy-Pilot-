@@ -90,6 +90,18 @@
   .tier-chip.hot { color: var(--green); border-color: var(--green); }
   .tier-chip.warm { color: var(--amber); border-color: var(--amber-dim); }
   .tier-chip.cold { color: var(--text-dim); }
+  .feedback-flag {
+    font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--amber); border: 1px solid var(--amber-dim); padding: 2px 7px; flex-shrink: 0;
+  }
+  .feedback-callout {
+    margin: 14px 0 0; padding: 10px 14px;
+    border-left: 2px solid var(--amber-dim);
+    background: rgba(226,163,63,0.06);
+    font-size: 0.84rem;
+  }
+  .feedback-callout dt { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); margin: 0 0 4px; }
+  .feedback-callout dd { margin: 0; color: var(--text); }
   .lead-score { font-family: var(--mono); font-size: 0.9rem; font-variant-numeric: tabular-nums; width: 36px; flex-shrink: 0; }
   .lead-name { font-weight: 600; font-size: 0.9rem; }
   .lead-email { color: var(--text-dim); font-size: 0.82rem; margin-left: auto; }
@@ -207,11 +219,14 @@
           '<span class="tier-chip ' + tierClass(tier) + '">' + escapeHtml(tier) + '</span>' +
           '<span class="lead-score">' + escapeHtml(c.fit_score === "" ? "–" : c.fit_score) + '</span>' +
           '<span class="lead-name">' + escapeHtml(c.name || "(no name)") + '</span>' +
+          (c.low_risk_feedback ? '<span class="feedback-flag">Has feedback</span>' : '') +
           '<span class="lead-email">' + escapeHtml(c.email) + '</span>' +
           '<span class="lead-date">' + formatDate(c.created_at) + '</span>' +
         '</div>' +
         '<div class="lead-detail" id="detail-' + i + '">' +
           '<div class="qa">' +
+            qaRow("Risk score", c.risk_score === "" || c.risk_score == null ? "" : c.risk_score + " / 100") +
+            qaRow("Risk tier", c.risk_tier) +
             qaRow("Comms/tracking tools", c.comms) +
             qaRow("Doc storage", c.docs) +
             qaRow("Regulatory awareness", c.news) +
@@ -222,6 +237,9 @@
             qaRow("Would pay to avoid", c.payoff) +
             (c.path === "skipped" ? qaRow("Path", "Skipped the questions") : "") +
           '</div>' +
+          (c.low_risk_feedback
+            ? '<div class="feedback-callout"><dt>What would make it worth switching</dt><dd>' + escapeHtml(c.low_risk_feedback) + '</dd></div>'
+            : '') +
         '</div>';
       leadsList.appendChild(card);
       card.querySelector(".lead-head").addEventListener("click", function () {

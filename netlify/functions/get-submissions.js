@@ -79,6 +79,9 @@ exports.handler = async function (event) {
           missed: s.data.missed,
           toolvalue: s.data.toolvalue,
           payoff: s.data.payoff,
+          risk_score: s.data.risk_score,
+          risk_tier: s.data.risk_tier,
+          low_risk_feedback: s.data.low_risk_feedback,
           created_at: s.created_at
         }))
       })
